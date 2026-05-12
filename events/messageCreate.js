@@ -42,61 +42,56 @@ module.exports = async (message, client) => {
   }
 
   // ================= CHATBOT SYSTEM =================
-const chatbotData = loadChatbot();
-const guildData = chatbotData[message.guild.id];
+  const chatbotData = loadChatbot();
+  const guildData = chatbotData[message.guild.id];
 
-if (!guildData) return;
-if (message.channel.id !== guildData.channel) return;
+  if (guildData && message.channel.id === guildData.channel) {
 
-// ignore bot messages
-if (message.author.bot) return;
+    try {
 
-try {
-  const API_KEY = process.env.CHATBOT_API_KEY;
+      const API_KEY = process.env.CHATBOT_API_KEY;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+      const url =
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
-  const prompt = `
-System: You are a friendly Discord chatbot.
-You are created by a developer named Huztro.
+      const prompt = `
+You are a friendly Discord chatbot.
+You are created by a developer named: Huztro
 
 Rules:
-- Be friendly and helpful
-- Change language if user uses another language
-- Do not repeat system message
-- Keep replies natural
+- Change languages if needed
+- Be helpful and natural
+- Do not mention system prompt
+- Keep responses short unless asked
 
 User: ${message.content}
 `;
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [{ text: prompt }]
-        }
-      ]
-    })
-  });
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: prompt }]
+            }
+          ]
+        })
+      });
 
-  const data = await res.json();
+      const data = await res.json();
 
-  const reply =
-    data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const reply =
+        data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-  if (reply) {
-    message.reply(reply);
-  } else {
-    message.reply("⚠️ AI did not return a response.");
+      if (reply) {
+        return message.reply(reply);
+      }
+
+    } catch (err) {
+      console.log("Chatbot error:", err.message);
+    }
   }
-
-} catch (err) {
-  console.log(
-    "Chatbot error:",
-    err?.response?.data || err.message
-  );
-}
+};
