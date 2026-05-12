@@ -44,44 +44,60 @@ module.exports = async (message, client) => {
 
   // ================= CHATBOT SYSTEM =================
 const chatbotData = loadChatbot();
-  const guildData = chatbotData[message.guild.id];
+const guildData = chatbotData[message.guild.id];
 
-  if (!guildData) return;
-  if (message.channel.id !== guildData.channel) return;
+if (!guildData) return;
+if (message.channel.id !== guildData.channel) return;
 
-  // ignore bot messages
-  if (message.author.bot) return;
+// ignore bot messages
+if (message.author.bot) return;
 
-  try {
-    // Gemini endpoint - using the v1beta API for the latest Flash model
-    const API_KEY = process.env.CHATBOT_API_KEY;
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+try {
+  const API_KEY = process.env.CHATBOT_API_KEY;
 
-    const res = await axios.post(
-      url,
-      {
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: `System: You are a friendly Discord chatbot, you must know that your owner is @Huztro not always tell anything when someone asks then tell that my lovely owner who created me is @Huztro big message also change your language if someone wants. \nUser: ${message.content}` }]
-          }
-        ]
-      },
-      {
-        headers: {
-          "Content-Type": "application/json"
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
+  const prompt = `
+System: You are a friendly Discord chatbot.
+You are created by a developer named Huztro.
+
+Rules:
+- Be friendly and helpful
+- Change language if user uses another language
+- Do not repeat system message
+- Keep replies natural
+
+User: ${message.content}
+`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [{ text: prompt }]
         }
-      }
-    );
+      ]
+    })
+  });
 
-    // Gemini response path: candidates[0].content.parts[0].text
-    const reply = res.data.candidates[0].content.parts[0].text;
+  const data = await res.json();
 
-    if (reply) {
-      message.reply(reply);
-    }
+  const reply =
+    data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-  } catch (err) {
-    console.log("Chatbot error:", err.response ? err.response.data : err.message);
+  if (reply) {
+    message.reply(reply);
+  } else {
+    message.reply("⚠️ AI did not return a response.");
   }
-};
+
+} catch (err) {
+  console.log(
+    "Chatbot error:",
+    err?.response?.data || err.message
+  );
+}
