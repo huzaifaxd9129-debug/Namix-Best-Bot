@@ -27,37 +27,69 @@ const client = new Client({
 client.commands = new Collection();
 client.aliases = new Collection();
 
-// ================= LOAD COMMANDS =================
+// ======================================================
+// COMMAND HANDLER (FIXED - SUPPORT FILES + FOLDERS)
+// ======================================================
 
-const commandFolders = fs.readdirSync("./commands");
+const commandPath = "./commands";
 
-for (const folder of commandFolders) {
-  const commandFiles = fs
-    .readdirSync(`./commands/${folder}`)
-    .filter(f => f.endsWith(".js"));
+const items = fs.readdirSync(commandPath);
 
-  for (const file of commandFiles) {
-    const command = require(`./commands/${folder}/${file}`);
+for (const item of items) {
+
+  const fullPath = `${commandPath}/${item}`;
+
+  // ================= IF FILE =================
+  if (item.endsWith(".js")) {
+
+    const command = require(fullPath);
 
     if (command.name) {
       client.commands.set(command.name, command);
     }
 
-    if (command.aliases && Array.isArray(command.aliases)) {
-      command.aliases.forEach(alias =>
-        client.aliases.set(alias, command.name)
+    if (command.aliases) {
+      command.aliases.forEach(a =>
+        client.aliases.set(a, command.name)
       );
+    }
+
+  }
+
+  // ================= IF FOLDER =================
+  else if (fs.lstatSync(fullPath).isDirectory()) {
+
+    const files = fs.readdirSync(fullPath);
+
+    for (const file of files) {
+
+      if (!file.endsWith(".js")) continue;
+
+      const command = require(`${fullPath}/${file}`);
+
+      if (command.name) {
+        client.commands.set(command.name, command);
+      }
+
+      if (command.aliases) {
+        command.aliases.forEach(a =>
+          client.aliases.set(a, command.name)
+        );
+      }
     }
   }
 }
 
-console.log("🚀 All commands loaded successfully!");
+console.log("🚀 Commands loaded!");
 
-// ================= LOAD EVENTS =================
+// ======================================================
+// EVENT HANDLER
+// ======================================================
 
 const eventFiles = fs.readdirSync("./events");
 
 for (const file of eventFiles) {
+
   const event = require(`./events/${file}`);
   const eventName = file.split(".")[0];
 
@@ -66,11 +98,14 @@ for (const file of eventFiles) {
   );
 }
 
-console.log("📡 All events loaded successfully!");
+console.log("📡 Events loaded!");
 
-// ================= MESSAGE HANDLER =================
+// ======================================================
+// MESSAGE HANDLER
+// ======================================================
 
 client.on("messageCreate", async (message) => {
+
   if (!message.guild) return;
   if (message.author.bot) return;
 
@@ -99,7 +134,9 @@ client.on("messageCreate", async (message) => {
   }
 });
 
-// ================= ERROR HANDLING =================
+// ======================================================
+// ERROR HANDLING
+// ======================================================
 
 process.on("unhandledRejection", (err) => {
   console.log("⚠️ Unhandled Rejection:", err);
@@ -109,6 +146,8 @@ process.on("uncaughtException", (err) => {
   console.log("⚠️ Uncaught Exception:", err);
 });
 
-// ================= LOGIN =================
+// ======================================================
+// LOGIN
+// ======================================================
 
 client.login(config.token);
