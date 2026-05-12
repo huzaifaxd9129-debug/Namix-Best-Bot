@@ -226,23 +226,23 @@ Welcome to the server!
     // TICKET SETUP
     // =========================================================
 
-    if (cmd === "tickets") {
+if (cmd === "tickets") {
 
-      const channel = message.mentions.channels.first();
+  const channel = message.mentions.channels.first();
 
-      if (!channel) {
-        return message.reply("Mention setup channel.");
-      }
+  if (!channel) {
+    return message.reply("Mention setup channel.");
+  }
 
-      ticketData[message.guild.id] = {
-        channel: channel.id
-      };
+  ticketData[message.guild.id] = {
+    channel: channel.id
+  };
 
-      save(ticketFile, ticketData);
+  save(ticketFile, ticketData);
 
-      const embed = new EmbedBuilder()
-        .setTitle("🎫 Support Tickets")
-        .setDescription(`
+  const embed = new EmbedBuilder()
+    .setTitle("🎫 ${message.guild.name} Support System")
+    .setDescription(`
 **Need help? Open a ticket below**
 
 📌 Ticket Categorys:
@@ -253,41 +253,50 @@ Welcome to the server!
 
 ⚠️ Do not spam tickets
 ✔ Staff will respond ASAP
-        `)
-        .setColor("Blue");
+    `)
+    .setColor("Blue");
 
-      const row = new ActionRowBuilder()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId("ticket_support")
-            .setLabel("Support")
-            .setStyle(ButtonStyle.Primary),
+  // ================= DROPDOWN MENU =================
 
-          new ButtonBuilder()
-            .setCustomId("ticket_purchase")
-            .setLabel("Purchase")
-            .setStyle(ButtonStyle.Success),
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId("ticket_menu")
+    .setPlaceholder("🎫 Select ticket category")
+    .addOptions([
+      {
+        label: "Support",
+        description: "Get help from staff",
+        value: "support",
+        emoji: "🛠️"
+      },
+      {
+        label: "Purchase",
+        description: "Buy / payment support",
+        value: "purchase",
+        emoji: "🛒"
+      },
+      {
+        label: "Report",
+        description: "Report a user or issue",
+        value: "report",
+        emoji: "📩"
+      },
+      {
+        label: "Claim Reward",
+        description: "Claim your reward",
+        value: "claim_reward",
+        emoji: "🎁"
+      }
+    ]);
 
-          new ButtonBuilder()
-            .setCustomId("ticket_report")
-            .setLabel("Report")
-            .setStyle(ButtonStyle.Danger),
+  const row = new ActionRowBuilder().addComponents(menu);
 
-          new ButtonBuilder()
-            .setCustomId("ticket_claimreward")
-            .setLabel("Claim Reward")
-            .setStyle(ButtonStyle.Secondary)
-        );
+  await channel.send({
+    embeds: [embed],
+    components: [row]
+  });
 
-      await channel.send({
-        embeds: [embed],
-        components: [row]
-      });
-
-      return message.channel.send(
-        "✅ Ticket panel created."
-      );
-    }
+  return message.channel.send("✅ Dropdown ticket panel created.");
+}
 
     // =========================================================
     // STAFF APPLY
