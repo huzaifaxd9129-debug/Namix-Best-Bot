@@ -247,7 +247,7 @@ if (!channel) {
   save(ticketFile, ticketData);
 
   const embed = new EmbedBuilder()
-    .setTitle('🎫 ${message.guild.name} Support System')
+    .setTitle('🎫 Support System')
     .setDescription(`
 **Need help? Open a ticket below**
 
