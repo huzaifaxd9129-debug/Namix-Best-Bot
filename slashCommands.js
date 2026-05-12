@@ -13,7 +13,7 @@ if (!fs.existsSync(automodFile)) {
   fs.writeFileSync(automodFile, "{}");
 }
 
-let automod = require("../data/automod.json");
+let automod = require("./data/automod.json");
 
 // ================= SAVE =================
 
