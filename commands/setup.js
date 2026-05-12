@@ -226,41 +226,41 @@ Welcome to the server!
     // TICKET SETUP
     // =========================================================
 
-    if (cmd === "tickets") {
+if (cmd === "tickets") {
 
-      const embed = new EmbedBuilder()
-        .setTitle("🎫 SUPPORT SYSTEM")
-        .setDescription(`
+const channel =
+  message.mentions.channels.first() ||
+  message.guild.channels.cache.get(args[1]) ||
+  message.guild.channels.cache.find(
+    c => c.name === args[1]
+  );
+
+if (!channel) {
+  return message.reply("❌ Mention a valid channel or give channel ID/name.");
+}
+
+  ticketData[message.guild.id] = {
+    channel: channel.id
+  };
+
+  save(ticketFile, ticketData);
+
+  const embed = new EmbedBuilder()
+    .setTitle('🎫 ${message.guild.name} Support System')
+    .setDescription(`
 **Need help? Open a ticket below**
 
-📌 What you can get:
-• Support from staff
-• Report a user
-• Partnership request
-• General help
+📌 Ticket Categorys:
+• Support
+• Purchase
+• Report
+• Claim Reward
 
 ⚠️ Do not spam tickets
 ✔ Staff will respond ASAP
-        `)
-        .setColor("Aqua");
+    `)
+    .setColor("Aqua");
 
-      const menu = new StringSelectMenuBuilder()
-        .setCustomId("ticket_select")
-        .setPlaceholder("🎫 Select Ticket Category")
-        .addOptions([
-          { label: "Support", value: "support" },
-          { label: "Purchase", value: "purchase" },
-          { label: "Report", value: "report" },
-          { label: "Claim_Reward", value: "claim_reward" }
-        ]);
-
-      const row = new ActionRowBuilder().addComponents(menu);
-
-      return message.channel.send({
-        embeds: [embed],
-        components: [row]
-      });
-    }
   // ================= DROPDOWN MENU =================
 
   const menu = new StringSelectMenuBuilder()
