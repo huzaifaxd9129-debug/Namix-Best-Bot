@@ -28,18 +28,16 @@ client.commands = new Collection();
 client.aliases = new Collection();
 
 // ======================================================
-// COMMAND HANDLER (FIXED - SUPPORT FILES + FOLDERS)
+// COMMAND HANDLER
 // ======================================================
 
 const commandPath = "./commands";
-
 const items = fs.readdirSync(commandPath);
 
 for (const item of items) {
 
   const fullPath = `${commandPath}/${item}`;
 
-  // ================= IF FILE =================
   if (item.endsWith(".js")) {
 
     const command = require(fullPath);
@@ -54,10 +52,7 @@ for (const item of items) {
       );
     }
 
-  }
-
-  // ================= IF FOLDER =================
-  else if (fs.lstatSync(fullPath).isDirectory()) {
+  } else if (fs.lstatSync(fullPath).isDirectory()) {
 
     const files = fs.readdirSync(fullPath);
 
@@ -83,7 +78,7 @@ for (const item of items) {
 console.log("🚀 Commands loaded!");
 
 // ======================================================
-// EVENT HANDLER
+// EVENT HANDLER (messageCreate is handled HERE)
 // ======================================================
 
 const eventFiles = fs.readdirSync("./events");
@@ -99,40 +94,6 @@ for (const file of eventFiles) {
 }
 
 console.log("📡 Events loaded!");
-
-// ======================================================
-// MESSAGE HANDLER
-// ======================================================
-
-client.on("messageCreate", async (message) => {
-
-  if (!message.guild) return;
-  if (message.author.bot) return;
-
-  const prefix = config.prefix;
-
-  if (!message.content.startsWith(prefix)) return;
-
-  const args = message.content
-    .slice(prefix.length)
-    .trim()
-    .split(/ +/);
-
-  const cmd = args.shift().toLowerCase();
-
-  const command =
-    client.commands.get(cmd) ||
-    client.commands.get(client.aliases.get(cmd));
-
-  if (!command) return;
-
-  try {
-    command.execute(message, args, client);
-  } catch (err) {
-    console.error(err);
-    message.reply("❌ Error executing command.");
-  }
-});
 
 // ======================================================
 // ERROR HANDLING
