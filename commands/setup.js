@@ -228,11 +228,16 @@ Welcome to the server!
 
 if (cmd === "tickets") {
 
-  const channel = message.mentions.channels.first();
+const channel =
+  message.mentions.channels.first() ||
+  message.guild.channels.cache.get(args[1]) ||
+  message.guild.channels.cache.find(
+    c => c.name === args[1]
+  );
 
-  if (!channel) {
-    return message.reply("Mention setup channel.");
-  }
+if (!channel) {
+  return message.reply("❌ Mention a valid channel or give channel ID/name.");
+}
 
   ticketData[message.guild.id] = {
     channel: channel.id
@@ -254,7 +259,7 @@ if (cmd === "tickets") {
 ⚠️ Do not spam tickets
 ✔ Staff will respond ASAP
     `)
-    .setColor("Blue");
+    .setColor("Aqua");
 
   // ================= DROPDOWN MENU =================
 
