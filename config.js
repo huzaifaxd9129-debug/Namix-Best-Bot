@@ -2,6 +2,7 @@ module.exports = {
   // ================= BOT SETTINGS =================
   prefix: "!",
   token: process.env.TOKEN,
+  clientId: process.env.CLIENT_ID,
 
   // ================= OWNERS =================
   ownerID: "1363540480662704248",
