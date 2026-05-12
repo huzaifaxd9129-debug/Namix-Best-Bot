@@ -84,3 +84,4 @@ const chatbotData = loadChatbot();
   } catch (err) {
     console.log("Chatbot error:", err.response ? err.response.data : err.message);
   }
+};
