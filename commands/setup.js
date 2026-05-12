@@ -232,7 +232,7 @@ const channel =
   message.mentions.channels.first() ||
   message.guild.channels.cache.get(args[1]) ||
   message.guild.channels.cache.find(
-    c => c.name === args[1]
+    c => c.name.toLowerCase() === args.slice(1).join(" ").toLowerCase()
   );
 
 if (!channel) {
@@ -246,7 +246,7 @@ if (!channel) {
   save(ticketFile, ticketData);
 
   const embed = new EmbedBuilder()
-    .setTitle("🎫 ${message.guild.name} Support System")
+    .setTitle(`🎫 ${message.guild.name} Support System`)
     .setDescription(`
 **Need help? Open a ticket below**
 
