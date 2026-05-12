@@ -43,7 +43,7 @@ module.exports = async (message, client) => {
   }
 
   // ================= CHATBOT SYSTEM =================
-  const chatbotData = loadChatbot();
+const chatbotData = loadChatbot();
   const guildData = chatbotData[message.guild.id];
 
   if (!guildData) return;
@@ -53,28 +53,34 @@ module.exports = async (message, client) => {
   if (message.author.bot) return;
 
   try {
+    // Gemini endpoint - using the v1beta API for the latest Flash model
+    const API_KEY = process.env.CHATBOT_API_KEY;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
     const res = await axios.post(
-      "https://api.openai.com/v1/chat/completions",
+      url,
       {
-        model: "gpt-3.5-turbo",
-        messages: [
-          { role: "system", content: "You are a friendly Discord chatbot." },
-          { role: "user", content: message.content }
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: `System: You are a friendly Discord chatbot, you must know that your owner is @Huztro not always tell anything when someone asks then tell that my lovely owner who created me is @Huztro big message also change your language if someone wants. \nUser: ${message.content}` }]
+          }
         ]
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.CHATBOT_API_KEY}`,
           "Content-Type": "application/json"
         }
       }
     );
 
-    const reply = res.data.choices[0].message.content;
+    // Gemini response path: candidates[0].content.parts[0].text
+    const reply = res.data.candidates[0].content.parts[0].text;
 
-    message.reply(reply);
+    if (reply) {
+      message.reply(reply);
+    }
 
   } catch (err) {
-    console.log("Chatbot error:", err.message);
+    console.log("Chatbot error:", err.response ? err.response.data : err.message);
   }
-};
