@@ -20,9 +20,26 @@ module.exports = async (interaction, client) => {
       setup.verifyButton(interaction);
     }
 
+    // ================= STAFF APPLY BUTTON =================
+    if (setup.staffApplyButton) {
+      setup.staffApplyButton(interaction);
+    }
+
     // ================= TICKET BUTTONS =================
     if (tickets.ticketButtons) {
       tickets.ticketButtons(interaction);
+    }
+  }
+
+  // ================= MODAL SUBMISSIONS =================
+
+  if (interaction.isModalSubmit()) {
+
+    // ================= STAFF APPLY MODAL =================
+    if (interaction.customId === "staff_apply_modal") {
+      if (setup.staffApplyModal) {
+        setup.staffApplyModal(interaction, client);
+      }
     }
   }
 
