@@ -83,33 +83,31 @@ module.exports = async (message, client) => {
   }
 
   // ==================================================
-  // CHATBOT SYSTEM
-  // ==================================================
+// CHATBOT SYSTEM
+// ==================================================
 
-  const chatbotData = loadChatbot();
+const chatbotData = loadChatbot();
 
-  const guildData =
-    chatbotData[message.guild.id];
+const guildData =
+  chatbotData[message.guild.id];
 
-  // chatbot not enabled
+// chatbot not enabled
+if (!guildData) return;
 
-  if (!guildData) return;
+// wrong channel
+if (message.channel.id !== guildData.channel) return;
 
-  // wrong channel
+// 🔥 DEBUG: check if chatbot is triggering
+console.log("Chatbot triggered:", message.content);
 
-  if (
-    message.channel.id !== guildData.channel
-  ) return;
+try {
 
-  try {
+  const API_KEY = process.env.CHATBOT_API_KEY;
 
-    const API_KEY =
-      process.env.CHATBOT_API_KEY;
+  const url =
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
-    const url =
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
-
-    const prompt = `
+  const prompt = `
 You are a friendly Discord chatbot.
 
 You were created by Huztro.
@@ -124,50 +122,38 @@ Rules:
 User: ${message.content}
 `;
 
-    const res = await fetch(url, {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            {
+              text: prompt
+            }
+          ]
+        }
+      ]
+    })
+  });
 
-      method: "POST",
+  const data = await res.json();
 
-      headers: {
-        "Content-Type":
-          "application/json"
-      },
+  // 🔥 DEBUG: see full API response
+  console.log("Gemini response:", JSON.stringify(data, null, 2));
 
-      body: JSON.stringify({
+  const reply =
+    data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt
-              }
-            ]
-          }
-        ]
-
-      })
-
-    });
-
-    const data = await res.json();
-
-    console.log(data);
-
-    const reply =
-      data?.candidates?.[0]
-      ?.content?.parts?.[0]?.text;
-
-    if (reply) {
-      message.reply(reply);
-    }
-
-  } catch (err) {
-
-    console.log(
-      "Chatbot Error:",
-      err
-    );
-
+  if (reply) {
+    return message.reply(reply);
+  } else {
+    console.log("No reply from AI");
   }
 
-};
+} catch (err) {
+  console.log("Chatbot Error:", err);
+}
