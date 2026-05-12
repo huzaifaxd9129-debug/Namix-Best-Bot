@@ -11,6 +11,8 @@ const {
 
 const config = require("./config");
 
+const chatbotData = require("./data/chatbot.json");
+
 // ================= CLIENT =================
 
 const client = new Client({
