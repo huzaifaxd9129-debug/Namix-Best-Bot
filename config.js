@@ -3,6 +3,7 @@ module.exports = {
   prefix: "!",
   token: process.env.TOKEN,
   clientId: process.env.CLIENT_ID,
+  guildId: process.env.GUILD_ID,
 
   // ================= OWNERS =================
   ownerID: "1363540480662704248",
