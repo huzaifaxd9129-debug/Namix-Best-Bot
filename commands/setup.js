@@ -166,13 +166,18 @@ Examples:
       save(verifyFile, verifyData);
 
       const embed = new EmbedBuilder()
-        .setTitle("🔐 Verification System")
+        .setTitle("🔐 ${message.guild.name} Verification System")
         .setDescription(`
-Click the button below to verify yourself.
+Welcome to the server!
 
-✅ Access all channels
-✅ Unlock server
-✅ Get verified role
+✅ Click the button below to verify yourself and unlock:
+
+• 💬 Chat Access
+• 🎉 Full Server Features
+• 👥 Member Permissions
+• 🚀 Exclusive Channels
+
+⚠️ Verification is required to continue.
         `)
         .setColor("Green");
 
@@ -238,14 +243,16 @@ Click the button below to verify yourself.
       const embed = new EmbedBuilder()
         .setTitle("🎫 Support Tickets")
         .setDescription(`
-Need help?
+**Need help? Open a ticket below**
 
-Open a ticket below.
+📌 Ticket Categorys:
+• Support
+• Purchase
+• Report
+• Claim Reward
 
-🎟️ Support
-🛒 Purchase
-📩 Report
-👮 Staff Apply
+⚠️ Do not spam tickets
+✔ Staff will respond ASAP
         `)
         .setColor("Blue");
 
@@ -267,8 +274,8 @@ Open a ticket below.
             .setStyle(ButtonStyle.Danger),
 
           new ButtonBuilder()
-            .setCustomId("ticket_apply")
-            .setLabel("Apply")
+            .setCustomId("ticket_claimreward")
+            .setLabel("Claim Reward")
             .setStyle(ButtonStyle.Secondary)
         );
 
@@ -310,14 +317,16 @@ Open a ticket below.
       const embed = new EmbedBuilder()
         .setTitle("👮 Staff Applications")
         .setDescription(`
-Want to become staff?
+**Want to join ${message.guild.name} staff team?**
 
-Click the button below to apply.
+📌 Requirements:
+• Must be active daily
+• Age 13+
+• Good behavior in server
+• Must know basic Discord rules
+• No toxicity / spam
 
-Requirements:
-✅ Active
-✅ Mature
-✅ Respectful
+✔ Click below to start application
         `)
         .setColor("Purple");
 
@@ -400,7 +409,7 @@ module.exports.memberJoin = async (member) => {
         .setDescription(`
 Welcome ${member}
 
-You are member #${member.guild.memberCount}
+You are our #${member.guild.memberCount} member
         `)
         .setThumbnail(member.user.displayAvatarURL())
         .setColor("Green");
