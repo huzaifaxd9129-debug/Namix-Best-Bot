@@ -31,7 +31,7 @@ client.aliases = new Collection();
 client.slashCommands = new Collection();
 
 // ======================================================
-// COMMAND HANDLER
+// PREFIX COMMAND HANDLER
 // ======================================================
 
 const commandPath = "./commands";
@@ -78,10 +78,57 @@ for (const item of items) {
   }
 }
 
-console.log("🚀 Commands loaded!");
+console.log("🚀 Prefix commands loaded!");
 
 // ======================================================
-// EVENT HANDLER (messageCreate is handled HERE)
+// SLASH COMMAND HANDLER (ADDED)
+// ======================================================
+
+const slashCommands = [];
+const slashPath = "./slashCommands.js"; // your single file
+
+if (fs.existsSync(slashPath)) {
+  const cmds = require(slashPath);
+
+  for (const cmd of cmds) {
+    client.slashCommands.set(cmd.data.name, cmd);
+    slashCommands.push(cmd.data.toJSON());
+  }
+
+  console.log("⚡ Slash commands loaded!");
+}
+
+// ======================================================
+// SLASH COMMAND REGISTRATION (AUTO DEPLOY)
+// ======================================================
+
+const rest = new REST({ version: "10" }).setToken(config.token);
+
+const CLIENT_ID = config.clientId;
+const GUILD_ID = config.guildId; // recommended for testing
+
+(async () => {
+  try {
+    if (!CLIENT_ID || !GUILD_ID) {
+      console.log("⚠️ Missing CLIENT_ID or GUILD_ID in config");
+      return;
+    }
+
+    console.log("🔄 Deploying slash commands...");
+
+    await rest.put(
+      Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+      { body: slashCommands }
+    );
+
+    console.log("✅ Slash commands deployed!");
+  } catch (err) {
+    console.error("❌ Slash deploy error:", err);
+  }
+})();
+
+// ======================================================
+// EVENT HANDLER
 // ======================================================
 
 const eventFiles = fs.readdirSync("./events");
