@@ -1,6 +1,5 @@
 const automod = require("../commands/automod");
 const chatbotDataFile = require("../data/chatbot.json");
-const axios = require("axios");
 const fs = require("fs");
 
 function loadChatbot() {
