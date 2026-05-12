@@ -12,6 +12,7 @@ const {
 const config = require("./config");
 
 const chatbotData = require("./data/chatbot.json");
+const fetch = require("node-fetch");
 
 // ================= CLIENT =================
 
