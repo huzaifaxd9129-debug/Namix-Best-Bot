@@ -11,6 +11,39 @@ const tickets = require("../commands/tickets");
 
 module.exports = async (interaction, client) => {
 
+  // ================= SLASH COMMANDS =================
+
+  if (interaction.isChatInputCommand()) {
+
+    const command = client.slashCommands.get(interaction.commandName);
+
+    if (!command) {
+      return interaction.reply({
+        content: "❌ Unknown command.",
+        ephemeral: true
+      });
+    }
+
+    try {
+      await command.execute(interaction);
+    } catch (err) {
+      console.error(`❌ Slash command error [${interaction.commandName}]:`, err);
+
+      const msg = {
+        content: "❌ An error occurred while running this command.",
+        ephemeral: true
+      };
+
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp(msg).catch(() => {});
+      } else {
+        await interaction.reply(msg).catch(() => {});
+      }
+    }
+
+    return;
+  }
+
   // ================= BUTTON INTERACTIONS =================
 
   if (interaction.isButton()) {

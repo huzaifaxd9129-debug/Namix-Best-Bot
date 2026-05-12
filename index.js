@@ -4,7 +4,9 @@ const {
   Client,
   GatewayIntentBits,
   Partials,
-  Collection
+  Collection,
+  REST,
+  Routes
 } = require("discord.js");
 
 const config = require("./config");
@@ -26,6 +28,7 @@ const client = new Client({
 
 client.commands = new Collection();
 client.aliases = new Collection();
+client.slashCommands = new Collection();
 
 // ======================================================
 // COMMAND HANDLER
@@ -76,6 +79,60 @@ for (const item of items) {
 }
 
 console.log("🚀 Commands loaded!");
+
+// ======================================================
+// SLASH COMMAND HANDLER
+// ======================================================
+
+const slashPath = "./slashCommands";
+
+function loadSlashCommands(dir) {
+  const entries = fs.readdirSync(dir);
+
+  for (const entry of entries) {
+    const fullPath = `${dir}/${entry}`;
+
+    if (fs.lstatSync(fullPath).isDirectory()) {
+      loadSlashCommands(fullPath);
+    } else if (entry.endsWith(".js")) {
+      const command = require(fullPath);
+
+      if (command.data && command.execute) {
+        client.slashCommands.set(command.data.name, command);
+      }
+    }
+  }
+}
+
+loadSlashCommands(slashPath);
+
+console.log(`⚡ Slash commands loaded: ${[...client.slashCommands.keys()].join(", ")}`);
+
+// ======================================================
+// DEPLOY SLASH COMMANDS VIA REST
+// ======================================================
+
+async function deploySlashCommands() {
+  if (!config.token) return;
+
+  const rest = new REST({ version: "10" }).setToken(config.token);
+  const body = [...client.slashCommands.values()].map(cmd => cmd.data.toJSON());
+
+  try {
+    console.log("🔄 Deploying slash commands...");
+
+    await rest.put(
+      Routes.applicationCommands(config.clientId || process.env.CLIENT_ID),
+      { body }
+    );
+
+    console.log("✅ Slash commands deployed globally!");
+  } catch (err) {
+    console.error("❌ Failed to deploy slash commands:", err);
+  }
+}
+
+deploySlashCommands();
 
 // ======================================================
 // EVENT HANDLER (messageCreate is handled HERE)
