@@ -370,119 +370,6 @@ if (!channel) {
 };
 
 // =========================================================
-// STAFF APPLY BUTTON EVENT
-// =========================================================
-
-module.exports.staffApplyButton = async (interaction) => {
-
-  if (interaction.customId !== "staff_apply") return;
-
-  const data = applyData[interaction.guild.id];
-
-  if (!data) {
-    return interaction.reply({
-      content: "❌ Staff apply system not setup.",
-      ephemeral: true
-    });
-  }
-
-  const modal = new ModalBuilder()
-    .setCustomId("staff_apply_modal")
-    .setTitle("📋 Staff Application");
-
-  const q1 = new TextInputBuilder()
-    .setCustomId("apply_name")
-    .setLabel("What is your name?")
-    .setStyle(TextInputStyle.Short)
-    .setRequired(true);
-
-  const q2 = new TextInputBuilder()
-    .setCustomId("apply_age")
-    .setLabel("How old are you?")
-    .setStyle(TextInputStyle.Short)
-    .setRequired(true);
-
-  const q3 = new TextInputBuilder()
-    .setCustomId("apply_timezone")
-    .setLabel("What is your timezone?")
-    .setStyle(TextInputStyle.Short)
-    .setRequired(true);
-
-  const q4 = new TextInputBuilder()
-    .setCustomId("apply_experience")
-    .setLabel("Do you have staff experience?")
-    .setStyle(TextInputStyle.Paragraph)
-    .setRequired(true);
-
-  const q5 = new TextInputBuilder()
-    .setCustomId("apply_why")
-    .setLabel("Why should we pick you?")
-    .setStyle(TextInputStyle.Paragraph)
-    .setRequired(true);
-
-  modal.addComponents(
-    new ActionRowBuilder().addComponents(q1),
-    new ActionRowBuilder().addComponents(q2),
-    new ActionRowBuilder().addComponents(q3),
-    new ActionRowBuilder().addComponents(q4),
-    new ActionRowBuilder().addComponents(q5)
-  );
-
-  await interaction.showModal(modal);
-};
-
-// =========================================================
-// STAFF APPLY MODAL SUBMISSION
-// =========================================================
-
-module.exports.staffApplyModal = async (interaction, client) => {
-
-  if (interaction.customId !== "staff_apply_modal") return;
-
-  const data = applyData[interaction.guild.id];
-  const logsConfig = logsData[interaction.guild.id];
-
-  const name       = interaction.fields.getTextInputValue("apply_name");
-  const age        = interaction.fields.getTextInputValue("apply_age");
-  const timezone   = interaction.fields.getTextInputValue("apply_timezone");
-  const experience = interaction.fields.getTextInputValue("apply_experience");
-  const why        = interaction.fields.getTextInputValue("apply_why");
-
-  if (logsConfig && logsConfig.channel) {
-
-    const logsChannel =
-      interaction.guild.channels.cache.get(logsConfig.channel);
-
-    if (logsChannel) {
-
-      const embed = new EmbedBuilder()
-        .setTitle("📋 New Staff Application")
-        .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-        .setColor("Purple")
-        .addFields(
-          {
-            name: "👤 Applicant",
-            value: `${interaction.user} (${interaction.user.tag})\nID: ${interaction.user.id}`
-          },
-          { name: "📛 Name",               value: name,       inline: true },
-          { name: "🎂 Age",                value: age,        inline: true },
-          { name: "🌍 Timezone",           value: timezone,   inline: true },
-          { name: "🛡️ Staff Experience",   value: experience },
-          { name: "💡 Why should we pick you?", value: why }
-        )
-        .setTimestamp();
-
-      await logsChannel.send({ embeds: [embed] });
-    }
-  }
-
-  await interaction.reply({
-    content: "✅ Your staff application has been submitted! We will review it shortly.",
-    ephemeral: true
-  });
-};
-
-// =========================================================
 // VERIFY BUTTON EVENT
 // =========================================================
 
@@ -584,5 +471,125 @@ module.exports.memberLeave = async (member) => {
     channel.send(
       `😢 ${member.user.tag} left the server`
     );
+  }
+};
+
+ // ================= START GIVEAWAY =================
+    if (cmd === "gstart") {
+
+      const channel =
+        message.mentions.channels.first() ||
+        message.guild.channels.cache.get(args[1]);
+
+      const duration = parseInt(args[2]); // in seconds
+      const winnersCount = parseInt(args[3]);
+      const prize = args.slice(4).join(" ");
+
+      if (!channel || !duration || !winnersCount || !prize) {
+        return message.reply(
+          "❌ Usage: `gstart #channel <seconds> <winners> <prize>`"
+        );
+      }
+
+      const embed = new EmbedBuilder()
+        .setTitle("🎉 GIVEAWAY")
+        .setDescription(
+          `🎁 **Prize:** ${prize}\n🏆 **Winners:** ${winnersCount}\n⏰ **Ends in:** ${duration} seconds\n\nReact with 🎉 to join!`
+        )
+        .setColor("Gold")
+        .setFooter({ text: "Good luck!" });
+
+      const msg = await channel.send({ embeds: [embed] });
+
+      await msg.react("🎉");
+
+      const endTime = Date.now() + duration * 1000;
+
+      giveaways.set(msg.id, {
+        channelId: channel.id,
+        prize,
+        winnersCount,
+        endTime
+      });
+
+      setTimeout(async () => {
+        const giveaway = giveaways.get(msg.id);
+        if (!giveaway) return;
+
+        const fetchedMsg = await channel.messages.fetch(msg.id);
+
+        const users = await fetchedMsg.reactions.cache
+          .get("🎉")
+          .users.fetch();
+
+        const filtered = users.filter(u => !u.bot);
+
+        const userArray = [...filtered.values()];
+
+        if (userArray.length === 0) {
+          return channel.send("❌ No valid participants. Giveaway cancelled.");
+        }
+
+        const winners = [];
+
+        for (let i = 0; i < winnersCount; i++) {
+          if (userArray.length === 0) break;
+
+          const index = Math.floor(Math.random() * userArray.length);
+          winners.push(userArray[index]);
+          userArray.splice(index, 1);
+        }
+
+        channel.send(
+          `🎉 Giveaway Ended!\n🏆 Prize: **${prize}**\n\n🥳 Winners: ${winners.map(w => `<@${w.id}>`).join(", ")}`
+        );
+
+        giveaways.delete(msg.id);
+
+      }, duration * 1000);
+    }
+
+    // ================= END GIVEAWAY =================
+    if (cmd === "end") {
+
+      const messageId = args[1];
+      const channel =
+        message.mentions.channels.first() ||
+        message.guild.channels.cache.get(args[2]);
+
+      if (!messageId || !channel) {
+        return message.reply("❌ Usage: `giveaway end <messageId> #channel`");
+      }
+
+      const giveaway = giveaways.get(messageId);
+      if (!giveaway) {
+        return message.reply("❌ Giveaway not found.");
+      }
+
+      const fetchedMsg = await channel.messages.fetch(messageId);
+
+      const users = await fetchedMsg.reactions.cache
+        .get("🎉")
+        .users.fetch();
+
+      const filtered = users.filter(u => !u.bot);
+      const userArray = [...filtered.values()];
+
+      const winners = [];
+
+      for (let i = 0; i < giveaway.winnersCount; i++) {
+        if (userArray.length === 0) break;
+
+        const index = Math.floor(Math.random() * userArray.length);
+        winners.push(userArray[index]);
+        userArray.splice(index, 1);
+      }
+
+      channel.send(
+        `🎉 Giveaway Force Ended!\n🏆 Prize: **${giveaway.prize}**\n\n🥳 Winners: ${winners.map(w => `<@${w.id}>`).join(", ")}`
+      );
+
+      giveaways.delete(messageId);
+    }
   }
 };
