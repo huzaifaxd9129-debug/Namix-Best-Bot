@@ -38,7 +38,7 @@ module.exports = {
     saveData(data);
 
     message.channel.send(
-      `✅ You received ${amount} coins`
+      `✅ You received ${amount} Nexora Eco`
     );
 
   }
