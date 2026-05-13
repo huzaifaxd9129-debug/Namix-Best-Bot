@@ -7,7 +7,7 @@ module.exports = (client) => {
     { name: "Made By Huztro", type: ActivityType.Watching },
     { name: "Moderating Premium Servers", type: ActivityType.Playing },
     { name: "Ensuring Uptime Stability", type: ActivityType.Watching },
-    { name: "Exculting System Diagnostics", type: ActivityType.Listening },
+    { name: "Executing System Diagnostics", type: ActivityType.Listening },
     { name: "Optimizing Perfomance Modules", type: ActivityType.Competing }
   ];
 
