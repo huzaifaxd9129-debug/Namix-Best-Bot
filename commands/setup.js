@@ -37,6 +37,9 @@ let verifyData = load(verifyFile);
 let ticketData = load(ticketFile);
 let applyData = load(applyFile);
 let logsData = load(logsFile);
+let giveawayData = load(giveawayFile);
+
+const giveaways = new Map();
 
 // ================= MODULE =================
 
