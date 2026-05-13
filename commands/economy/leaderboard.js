@@ -20,7 +20,7 @@ module.exports = {
       )
       .slice(0, 10);
 
-    let text = "🏆 Leaderboard\n\n";
+    let text = "🏆 Nexora Eco Leaderboard\n\n";
 
     for (let i = 0; i < top.length; i++) {
 
