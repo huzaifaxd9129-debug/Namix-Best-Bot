@@ -18,6 +18,7 @@ const verifyFile = "./data/verify.json";
 const ticketFile = "./data/tickets.json";
 const applyFile = "./data/staffapply.json";
 const logsFile = "./data/logs.json";
+const giveawayFile = "./data/giveaway.json";
 
 function load(file) {
   if (!fs.existsSync(file)) {
