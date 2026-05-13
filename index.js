@@ -10,7 +10,6 @@ const {
 } = require("discord.js");
 
 const config = require("./config");
-client.ecoChannels = new Map();
 
 // ================= CLIENT =================
 
@@ -30,6 +29,7 @@ const client = new Client({
 client.commands = new Collection();
 client.aliases = new Collection();
 client.slashCommands = new Collection();
+client.ecoChannels = new Map();
 
 // ======================================================
 // PREFIX COMMAND HANDLER
