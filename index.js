@@ -10,6 +10,7 @@ const {
 } = require("discord.js");
 
 const config = require("./config");
+client.ecoChannels = new Map();
 
 // ================= CLIENT =================
 
