@@ -17,8 +17,8 @@ module.exports = {
     );
 
     message.channel.send(`
-💰 Cash: ${user.cash}
-🏦 Bank: ${user.bank}
+💰 Nexora Eco: ${user.cash}
+🏦 Bank Eco: ${user.bank}
     `);
 
   }
