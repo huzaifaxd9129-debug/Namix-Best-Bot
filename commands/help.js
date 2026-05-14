@@ -33,10 +33,10 @@ Thanks for using **Nexora**`
 
         .addOptions([
           {
-            label: "Moderation Commands (25)",
-            value: "mod",
-            description: "kick, ban, mute, timeout, slowmode...",
-            emoji: "🛡️"
+            label: "Premium Commands",
+            value: "premium",
+            description: "stats, weather, relationship...",
+            emoji: "💎"
           },
           {
             label: "Economy Commands (16)",
@@ -57,10 +57,10 @@ Thanks for using **Nexora**`
             emoji: "⚙️"
           },
           {
-            label: "Premium Commands",
-            value: "premium",
-            description: "stats, weather, relationship...",
-            emoji: "💎"
+            label: "Moderation Commands",
+            value: "mod",
+            description: "kick, ban, mute, timeout, slowmode...",
+            emoji: "🛡️"
           },
           {
             label: "AI System",
@@ -202,7 +202,7 @@ seen, firstmessage, clearsnipes, birthday
           .setDescription(
 `setup-chatbot, chatbot enable, chatbot disable
 
-📊 Smart AI Chat System`
+📊 AI Chat System`
           );
       }
 
@@ -235,7 +235,7 @@ seen, firstmessage, clearsnipes, birthday
           .setDescription(
 `welcome config, welcome delete, welcome test, welcome variables
 
-📊 Join System`
+📊 Welcomer System`
           );
       }
 
@@ -246,7 +246,7 @@ seen, firstmessage, clearsnipes, birthday
           .setDescription(
 `gstart, gend, greroll, gedit
 
-📊 Event System`
+📊 Giveaway System`
           );
       }
 
@@ -268,7 +268,7 @@ seen, firstmessage, clearsnipes, birthday
           .setDescription(
 `booster channel setup, booster message edit
 
-📊 VIP System`
+📊 Booster System`
           );
       }
 
