@@ -1,6 +1,6 @@
 const { addPremium } = require("../../utils/premium");
 
-const OWNER_ID = "YOUR_DISCORD_ID"; // change this
+const OWNER_ID = "1363540480662704248"; // change this
 
 module.exports = {
   name: "addpremium",
