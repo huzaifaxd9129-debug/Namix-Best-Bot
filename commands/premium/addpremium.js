@@ -1,6 +1,6 @@
 const { addPremium } = require("../../utils/premium");
 
-const OWNER_ID = "1363540480662704248"; // change this
+const OWNER_ID = "1363540480662704248";
 
 module.exports = {
   name: "addpremium",
@@ -8,22 +8,34 @@ module.exports = {
 
   run: async (client, message, args) => {
 
-    // 🔒 ADMIN ONLY CHECK
-    if (message.author.id !== OWNER_ID) {
-      return message.reply("❌ Only bot owner can use this command!");
+    try {
+
+      // 🔒 OWNER CHECK
+      if (message.author.id !== OWNER_ID) {
+        return message.reply("❌ Only owner can use this!");
+      }
+
+      const user = message.mentions.users.first();
+
+      const days = parseInt(args[1]) || 30;
+
+      if (!user) {
+        return message.reply("❌ Please mention a user!\nExample: `!addpremium @user 30`");
+      }
+
+      if (isNaN(days)) {
+        return message.reply("❌ Invalid days number!");
+      }
+
+      addPremium(user.id, days);
+
+      return message.channel.send(
+        `💎 ${user.tag} is now Premium for ${days} days!`
+      );
+
+    } catch (err) {
+      console.log(err);
+      message.reply("❌ Something went wrong in command.");
     }
-
-    const user = message.mentions.users.first();
-    const days = parseInt(args[1]) || 30;
-
-    if (!user) {
-      return message.reply("❌ Mention a user!");
-    }
-
-    addPremium(user.id, days);
-
-    message.channel.send(
-      `💎 ${user.username} is now Premium for **${days} days**!`
-    );
   }
 };
