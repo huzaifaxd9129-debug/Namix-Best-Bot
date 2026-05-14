@@ -549,4 +549,6 @@ module.exports = async (message, client) => {
     );
 
   }
+
+}
 };
