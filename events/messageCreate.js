@@ -22,20 +22,20 @@ const model = genAI.getGenerativeModel({
 });
 
 // ==================================================
-// FILE SYSTEM HELPERS
+// FILE SYSTEM (OPTIMIZED CACHE SYSTEM)
 // ==================================================
 
-function load(filePath) {
+function ensureDataFolder() {
   if (!fs.existsSync("./data")) fs.mkdirSync("./data");
+}
 
-  if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, "{}");
-  }
-
+function readJSON(filePath) {
+  ensureDataFolder();
+  if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, "{}");
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
-function save(filePath, data) {
+function writeJSON(filePath, data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
@@ -47,6 +47,23 @@ const chatbotFile = "./data/chatbot.json";
 const memoryFile = "./data/memory.json";
 const appFile = "./data/applications.json";
 const autoresponderFile = "./data/autoresponder.json";
+
+// ==================================================
+// CACHE (IMPORTANT PERFORMANCE BOOST)
+// ==================================================
+
+let chatbotCache = readJSON(chatbotFile);
+let memoryCache = readJSON(memoryFile);
+let appCache = readJSON(appFile);
+let autoresponderCache = readJSON(autoresponderFile);
+
+// auto-save interval (prevents disk spam)
+setInterval(() => {
+  writeJSON(chatbotFile, chatbotCache);
+  writeJSON(memoryFile, memoryCache);
+  writeJSON(appFile, appCache);
+  writeJSON(autoresponderFile, autoresponderCache);
+}, 15000);
 
 // ==================================================
 // COOLDOWN
@@ -65,7 +82,7 @@ module.exports = async (message, client) => {
   const ownerId = "1363540480662704248";
 
   // ==================================================
-  // COMMAND PARSING (FIXED + CLEAN)
+  // COMMAND PARSING
   // ==================================================
 
   let content = message.content.trim();
@@ -77,7 +94,6 @@ module.exports = async (message, client) => {
     cmd = args.shift()?.toLowerCase();
   }
 
-  // owner bypass prefix not needed (FIXED LOGIC)
   if (message.author.id === ownerId && !cmd) {
     args = content.split(/ +/);
     cmd = args.shift()?.toLowerCase();
@@ -102,12 +118,11 @@ module.exports = async (message, client) => {
     }
 
     // ==================================================
-    // APPLICATION COMMANDS (INLINE SYSTEM)
+    // APPLICATION SYSTEM (USES CACHE NOW)
     // ==================================================
 
-    const applications = load(appFile);
+    const applications = appCache;
 
-    // CREATE APPLICATION
     if (cmd === "createapplication") {
       if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator))
         return message.reply("❌ Admin only.");
@@ -159,12 +174,9 @@ module.exports = async (message, client) => {
         questions
       });
 
-      save(appFile, applications);
-
       return message.reply(`✅ Application created ID: ${appId}`);
     }
 
-    // SEND APPLICATION
     if (cmd === "sendapplication") {
       if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator))
         return message.reply("❌ Admin only.");
@@ -198,22 +210,15 @@ module.exports = async (message, client) => {
       return message.reply(`✅ Sent in ${channel}`);
     }
 
-    // LIST APPLICATIONS
     if (cmd === "listapplications") {
       const data = applications[message.guild.id];
       if (!data?.length) return message.reply("❌ No applications.");
 
-      const embed = new EmbedBuilder()
-        .setColor("Blurple")
-        .setTitle("📋 Applications")
-        .setDescription(
-          data.map(a => `🆔 ${a.id} | ${a.title}`).join("\n")
-        );
-
-      return message.channel.send({ embeds: [embed] });
+      return message.reply(
+        data.map(a => `🆔 ${a.id} | ${a.title}`).join("\n")
+      );
     }
 
-    // DELETE APPLICATION
     if (cmd === "deleteapplication") {
       if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator))
         return message.reply("❌ Admin only.");
@@ -221,12 +226,8 @@ module.exports = async (message, client) => {
       const id = parseInt(args[0]);
       if (!id) return message.reply("❌ Provide ID.");
 
-      const data = applications[message.guild.id];
-      if (!data) return message.reply("❌ No applications.");
-
-      applications[message.guild.id] = data.filter(a => a.id !== id);
-
-      save(appFile, applications);
+      applications[message.guild.id] =
+        (applications[message.guild.id] || []).filter(a => a.id !== id);
 
       return message.reply(`🗑 Deleted application ${id}`);
     }
@@ -237,35 +238,33 @@ module.exports = async (message, client) => {
   // ==================================================
 
   try {
-    if (automod?.runAutomod) automod.runAutomod(message);
-  } catch (e) {
-    console.log("Automod Error:", e);
-  }
+    automod?.runAutomod?.(message);
+  } catch {}
 
   // ==================================================
-  // AUTORESPONDER (NEW FEATURE ADDED)
+  // AUTORESPONDER (CACHE FAST SYSTEM)
   // ==================================================
 
-  const autoresponder = load(autoresponderFile);
-  const guildAR = autoresponder[message.guild.id];
+  const guildAR = autoresponderCache[message.guild.id];
 
   if (guildAR) {
+    const msg = message.content.toLowerCase();
+
     for (const trigger in guildAR) {
-      if (message.content.toLowerCase().includes(trigger.toLowerCase())) {
+      if (msg.includes(trigger.toLowerCase())) {
         return message.channel.send(guildAR[trigger]);
       }
     }
   }
 
   // ==================================================
-  // CHATBOT SYSTEM
+  // CHATBOT AI
   // ==================================================
 
-  const chatbot = load(chatbotFile);
-  const guildData = chatbot[message.guild.id];
+  const chatbot = chatbotCache[message.guild.id];
 
-  if (!guildData?.enabled) return;
-  if (message.channel.id !== guildData.channel) return;
+  if (!chatbot?.enabled) return;
+  if (message.channel.id !== chatbot.channel) return;
   if (message.content.startsWith(prefix)) return;
 
   if (aiCooldown.has(message.author.id)) return;
@@ -276,10 +275,11 @@ module.exports = async (message, client) => {
   try {
     await message.channel.sendTyping();
 
-    const memory = load(memoryFile);
-    if (!memory[message.author.id]) memory[message.author.id] = [];
+    if (!memoryCache[message.author.id]) {
+      memoryCache[message.author.id] = [];
+    }
 
-    const history = memory[message.author.id].map(m => ({
+    const history = memoryCache[message.author.id].map(m => ({
       role: m.role,
       parts: [{ text: m.content }]
     }));
@@ -301,14 +301,13 @@ module.exports = async (message, client) => {
     let text = result.response.text();
     if (text.length > 1900) text = text.slice(0, 1900);
 
-    memory[message.author.id].push(
+    memoryCache[message.author.id].push(
       { role: "user", content: message.content },
       { role: "model", content: text }
     );
 
-    memory[message.author.id] = memory[message.author.id].slice(-10);
-
-    save(memoryFile, memory);
+    memoryCache[message.author.id] =
+      memoryCache[message.author.id].slice(-10);
 
     return message.reply(text);
 
