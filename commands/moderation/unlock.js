@@ -8,7 +8,7 @@ module.exports = {
     });
 
     message.channel.send({
-      embeds: [embed("Channel Unlocked", "Chat is open again 🔓", message.author)]
+      embeds: [embed("Channel Unlocked", "Channel is open again 🔓", message.author)]
     });
   }
 };
