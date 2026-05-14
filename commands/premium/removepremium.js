@@ -1,6 +1,6 @@
 const fs = require("fs");
 
-const OWNER_ID = "YOUR_DISCORD_ID";
+const OWNER_ID = "1363540480662704248";
 
 module.exports = {
   name: "removepremium",
