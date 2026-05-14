@@ -29,6 +29,8 @@ client.commands = new Collection();
 client.aliases = new Collection();
 client.slashCommands = new Collection();
 client.ecoChannels = new Map();
+client.snipes = new Map();
+client.editsnipes = new Map();
 
 // ================= GEMINI AI =================
 
