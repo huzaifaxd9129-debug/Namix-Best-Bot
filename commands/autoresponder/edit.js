@@ -11,7 +11,7 @@ function save(data) {
 }
 
 module.exports = {
-  name: "ar-edit",
+  name: "autoresponder-edit",
   description: "Edit autoresponder",
 
   async execute(message, args) {
@@ -22,7 +22,7 @@ module.exports = {
     const newResponse = args.slice(1).join(" ");
 
     if (!trigger || !newResponse)
-      return message.reply("Usage: ar-edit <trigger> <new response>");
+      return message.reply("Usage: autoresponder-edit <trigger> <new response>");
 
     const data = load();
 
