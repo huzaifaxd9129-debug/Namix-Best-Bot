@@ -170,7 +170,7 @@ Examples:
       save(verifyFile, verifyData);
 
       const embed = new EmbedBuilder()
-        .setTitle("🔐 ${message.guild.name} Verification System")
+        .setTitle("🔐 Verification System")
         .setDescription(`
 Welcome to the server!
 
