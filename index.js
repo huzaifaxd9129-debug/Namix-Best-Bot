@@ -35,7 +35,7 @@ client.ecoChannels = new Map();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const model = genAI.getGenerativeModel({
-  model: "gemini-pro",
+  model: "gemini-1.5-flash",
 });
 
 // ================= CHATBOT STORAGE =================
@@ -122,100 +122,6 @@ for (const file of eventFiles) {
 }
 
 console.log("📡 Events loaded!");
-
-// ======================================================
-// MESSAGE HANDLER (COMMANDS + CHATBOT)
-// ======================================================
-
-client.on("messageCreate", async (message) => {
-
-  if (!message.guild) return;
-  if (message.author.bot) return;
-
-  const prefix = "!";
-  let args;
-  let cmd;
-
-  // OWNER COMMANDS (no prefix)
-  const ownerId = "1363540480662704248";
-
-  if (message.author.id === ownerId) {
-    args = message.content.trim().split(/ +/);
-    cmd = args.shift()?.toLowerCase();
-  }
-
-  // NORMAL PREFIX COMMANDS
-  else if (message.content.startsWith(prefix)) {
-    args = message.content.slice(prefix.length).trim().split(/ +/);
-    cmd = args.shift()?.toLowerCase();
-  }
-
-  // RUN COMMANDS
-  if (cmd) {
-    const command =
-      client.commands.get(cmd) ||
-      client.commands.get(client.aliases.get(cmd));
-
-    if (command) {
-      return command.execute(message, args, client);
-    }
-  }
-
-  // ================= CHATBOT SYSTEM =================
-
-  const data = loadChatbot();
-  const guildData = data[message.guild.id];
-
-  if (!guildData || !guildData.enabled) return;
-  if (message.channel.id !== guildData.channel) return;
-  if (message.content.startsWith("!")) return;
-
-  try {
-    await message.channel.sendTyping();
-
-    // MEMORY (last 5 messages per user)
-    if (!memory.has(message.author.id)) {
-      memory.set(message.author.id, []);
-    }
-
-    const userMemory = memory.get(message.author.id);
-
-    userMemory.push({
-      role: "user",
-      parts: [{ text: message.content }]
-    });
-
-    if (userMemory.length > 6) userMemory.shift();
-
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text: "You are a helpful Discord AI assistant. Keep replies short and clear."
-            }
-          ]
-        },
-        ...userMemory
-      ]
-    });
-
-    const response = await result.response;
-    const text = response.text();
-
-    userMemory.push({
-      role: "model",
-      parts: [{ text }]
-    });
-
-    return message.reply(text);
-
-  } catch (err) {
-    console.log("Gemini Error:", err);
-    return message.reply("❌ AI error occurred.");
-  }
-});
 
 // ======================================================
 // ERROR HANDLING

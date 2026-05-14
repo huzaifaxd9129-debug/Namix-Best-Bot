@@ -1,4 +1,38 @@
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const fs = require("fs");
 const automod = require("../commands/automod");
+
+// ==================================================
+// GEMINI AI SETUP
+// ==================================================
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+// ==================================================
+// MEMORY PERSISTENCE
+// ==================================================
+
+const memoryFile = "./data/memory.json";
+
+function load(filePath) {
+  if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, "{}");
+  return JSON.parse(fs.readFileSync(filePath, "utf8"));
+}
+
+function save(filePath, data) {
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+}
+
+// ==================================================
+// COOLDOWN
+// ==================================================
+
+const cooldown = new Set();
+
+// ==================================================
+// EVENT HANDLER
+// ==================================================
 
 module.exports = async (message, client) => {
 
@@ -34,7 +68,7 @@ module.exports = async (message, client) => {
       client.commands.get(client.aliases.get(cmd));
 
     if (command) {
-      command.execute(message, args, client);
+      return command.execute(message, args, client);
     }
   }
 
@@ -45,34 +79,28 @@ module.exports = async (message, client) => {
   if (automod.runAutomod) {
     automod.runAutomod(message);
   }
-};
 
   // ==================================================
   // AI CHATBOT
   // ==================================================
 
-(async () => {
-
-module.exports = async (message, client) => {
-
-  if (!message.guild || message.author.bot) return;
-
+  const chatbotFile = "./data/chatbot.json";
   const chatbot = load(chatbotFile);
-  const memory = load(memoryFile);
-
   const guildData = chatbot[message.guild.id];
 
   if (!guildData || !guildData.enabled) return;
   if (message.channel.id !== guildData.channel) return;
   if (message.content.startsWith("!")) return;
 
-  // cooldown
+  // Cooldown check (4 seconds)
   if (cooldown.has(message.author.id)) return;
   cooldown.add(message.author.id);
   setTimeout(() => cooldown.delete(message.author.id), 4000);
 
   try {
     await message.channel.sendTyping();
+
+    const memory = load(memoryFile);
 
     if (!memory[message.author.id]) {
       memory[message.author.id] = [];
@@ -119,4 +147,3 @@ module.exports = async (message, client) => {
   }
 };
 
-})();
