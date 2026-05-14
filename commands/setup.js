@@ -370,6 +370,115 @@ if (!channel) {
 };
 
 // =========================================================
+// STAFF APPLY BUTTON EVENT
+// =========================================================
+
+module.exports.staffApplyButton = async (interaction) => {
+
+  if (interaction.customId !== "staff_apply") return;
+
+  const modal = new ModalBuilder()
+    .setCustomId("staff_apply_modal")
+    .setTitle("Staff Application");
+
+  const nameInput = new TextInputBuilder()
+    .setCustomId("apply_name")
+    .setLabel("What is your name?")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true);
+
+  const ageInput = new TextInputBuilder()
+    .setCustomId("apply_age")
+    .setLabel("How old are you?")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true);
+
+  const timezoneInput = new TextInputBuilder()
+    .setCustomId("apply_timezone")
+    .setLabel("What is your timezone?")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true);
+
+  const experienceInput = new TextInputBuilder()
+    .setCustomId("apply_experience")
+    .setLabel("Do you have staff experience?")
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true);
+
+  const whyInput = new TextInputBuilder()
+    .setCustomId("apply_why")
+    .setLabel("Why should we pick you?")
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true);
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(nameInput),
+    new ActionRowBuilder().addComponents(ageInput),
+    new ActionRowBuilder().addComponents(timezoneInput),
+    new ActionRowBuilder().addComponents(experienceInput),
+    new ActionRowBuilder().addComponents(whyInput)
+  );
+
+  await interaction.showModal(modal);
+};
+
+// =========================================================
+// STAFF APPLY MODAL SUBMIT
+// =========================================================
+
+module.exports.staffApplyModal = async (interaction, client) => {
+
+  if (interaction.customId !== "staff_apply_modal") return;
+
+  const applyData = load(applyFile);
+  const config = applyData[interaction.guild.id];
+
+  if (!config) {
+    return interaction.reply({
+      content: "❌ Staff apply system not setup.",
+      ephemeral: true
+    });
+  }
+
+  const channel = interaction.guild.channels.cache.get(config.channel);
+
+  if (!channel) {
+    return interaction.reply({
+      content: "❌ Staff apply channel not found.",
+      ephemeral: true
+    });
+  }
+
+  const name       = interaction.fields.getTextInputValue("apply_name");
+  const age        = interaction.fields.getTextInputValue("apply_age");
+  const timezone   = interaction.fields.getTextInputValue("apply_timezone");
+  const experience = interaction.fields.getTextInputValue("apply_experience");
+  const why        = interaction.fields.getTextInputValue("apply_why");
+
+  const embed = new EmbedBuilder()
+    .setTitle("📋 New Staff Application")
+    .setColor("Purple")
+    .setThumbnail(interaction.user.displayAvatarURL())
+    .addFields(
+      { name: "👤 Applicant", value: `${interaction.user} (${interaction.user.tag})`, inline: false },
+      { name: "🪪 User ID",   value: interaction.user.id,                             inline: false },
+      { name: "❓ What is your name?",           value: name,       inline: false },
+      { name: "❓ How old are you?",             value: age,        inline: false },
+      { name: "❓ What is your timezone?",       value: timezone,   inline: false },
+      { name: "❓ Do you have staff experience?", value: experience, inline: false },
+      { name: "❓ Why should we pick you?",      value: why,        inline: false }
+    )
+    .setTimestamp();
+
+  await channel.send({ embeds: [embed] });
+
+  return interaction.reply({
+    content: "✅ Your application has been submitted! Staff will review it shortly.",
+    ephemeral: true
+  });
+};
+
+// =========================================================
 // VERIFY BUTTON EVENT
 // =========================================================
 
