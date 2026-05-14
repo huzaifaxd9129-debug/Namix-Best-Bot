@@ -1,6 +1,9 @@
 const {
   EmbedBuilder,
-  PermissionsBitField
+  PermissionsBitField,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle
 } = require("discord.js");
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
@@ -8,7 +11,7 @@ const fs = require("fs");
 const automod = require("../commands/automod");
 
 // ==================================================
-// GEMINI AI SETUP
+// GEMINI AI
 // ==================================================
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -31,11 +34,18 @@ function load(filePath) {
     fs.writeFileSync(filePath, "{}");
   }
 
-  return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  return JSON.parse(
+    fs.readFileSync(filePath, "utf8")
+  );
 }
 
 function save(filePath, data) {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+
+  fs.writeFileSync(
+    filePath,
+    JSON.stringify(data, null, 2)
+  );
+
 }
 
 // ==================================================
@@ -53,7 +63,7 @@ const appFile = "./data/applications.json";
 const aiCooldown = new Set();
 
 // ==================================================
-// EXPORT EVENT
+// EVENT
 // ==================================================
 
 module.exports = async (message, client) => {
@@ -62,7 +72,7 @@ module.exports = async (message, client) => {
   if (message.author.bot) return;
 
   // ==================================================
-  // PREFIX SYSTEM
+  // PREFIX
   // ==================================================
 
   const prefix = "!";
@@ -71,7 +81,6 @@ module.exports = async (message, client) => {
   let args;
   let cmd;
 
-  // OWNER NO PREFIX
   if (message.author.id === ownerId) {
 
     args = message.content.trim().split(/ +/);
@@ -79,7 +88,6 @@ module.exports = async (message, client) => {
 
   }
 
-  // NORMAL PREFIX
   else if (message.content.startsWith(prefix)) {
 
     args = message.content
@@ -110,7 +118,9 @@ module.exports = async (message, client) => {
 
         console.log(err);
 
-        return message.reply("❌ Command error occurred.");
+        return message.reply(
+          "❌ Command error occurred."
+        );
 
       }
     }
@@ -133,10 +143,14 @@ module.exports = async (message, client) => {
   }
 
   // ==================================================
-  // STAFF APPLICATION SYSTEM
+  // APPLICATION SYSTEM
   // ==================================================
 
   const applications = load(appFile);
+
+  // ==================================================
+  // CREATE APPLICATION
+  // ==================================================
 
   if (cmd === "createapplication") {
 
@@ -145,170 +159,320 @@ module.exports = async (message, client) => {
         PermissionsBitField.Flags.Administrator
       )
     ) {
-      return message.reply("❌ Admin only.");
+
+      return message.reply(
+        "❌ Admin only."
+      );
+
     }
 
     const ask = async (question) => {
 
       const embed = new EmbedBuilder()
+
         .setColor("Blurple")
+
         .setTitle("📘 Application Creator")
+
         .setDescription(question);
 
       await message.channel.send({
         embeds: [embed]
       });
 
-      const collected = await message.channel.awaitMessages({
-        filter: m => m.author.id === message.author.id,
-        max: 1,
-        time: 120000
-      });
+      const collected =
+        await message.channel.awaitMessages({
+
+          filter:
+            m => m.author.id === message.author.id,
+
+          max: 1,
+
+          time: 120000
+
+        });
 
       if (!collected.first()) return null;
 
-      const answer = collected.first().content;
-
-      if (answer.toLowerCase() === "cancel") {
-        return null;
-      }
-
-      return answer;
+      return collected.first().content;
     };
 
-    // TITLE
-    const title = await ask(
-      "Reply with application title."
-    );
+    const title =
+      await ask("Application title?");
 
-    if (!title) {
-      return message.reply("❌ Cancelled.");
-    }
+    if (!title) return;
 
-    // DESCRIPTION
-    const description = await ask(
-      "Reply with application description."
-    );
+    const description =
+      await ask("Application description?");
 
-    if (!description) {
-      return message.reply("❌ Cancelled.");
-    }
+    if (!description) return;
 
-    // BUTTON NAME
-    const buttonName = await ask(
-      "Reply with button name."
-    );
+    const buttonName =
+      await ask("Button name?");
 
-    if (!buttonName) {
-      return message.reply("❌ Cancelled.");
-    }
+    if (!buttonName) return;
 
-    // CHANNEL
-    const channelMsg = await ask(
-      "Mention the application channel."
-    );
-
-    if (!channelMsg) {
-      return message.reply("❌ Cancelled.");
-    }
-
-    const channel =
-      message.mentions.channels.first() ||
-      message.guild.channels.cache.get(
-        channelMsg.replace(/[<#>]/g, "")
-      );
-
-    if (!channel) {
-      return message.reply("❌ Invalid channel.");
-    }
-
-    // QUESTIONS
     const questions = [];
 
     for (let i = 0; i < 5; i++) {
 
-      const q = await ask(
-        `Question ${i + 1}?`
-      );
+      const q =
+        await ask(`Question ${i + 1}?`);
 
-      if (!q) {
-        return message.reply("❌ Cancelled.");
-      }
+      if (!q) return;
 
       questions.push(q);
     }
 
-    // SAVE
-    applications[message.guild.id] = {
+    if (!applications[message.guild.id]) {
+      applications[message.guild.id] = [];
+    }
+
+    const appId =
+      applications[message.guild.id].length + 1;
+
+    applications[message.guild.id].push({
+
+      id: appId,
+
       title,
       description,
       buttonName,
-      questions,
-      channel: channel.id
-    };
+      questions
+
+    });
 
     save(appFile, applications);
 
-    // PANEL
-    const panel = new EmbedBuilder()
-      .setColor("Blurple")
-      .setTitle(title)
-      .setDescription(description)
-      .setFooter({
-        text: `${message.guild.name} Applications`
-      });
-
-    const row = {
-      type: 1,
-      components: [
-        {
-          type: 2,
-          style: 1,
-          custom_id: "apply_btn",
-          label: buttonName
-        }
-      ]
-    };
-
-    await channel.send({
-      embeds: [panel],
-      components: [row]
-    });
-
     return message.reply(
-      "✅ Application panel created."
+      `✅ Application created with ID: ${appId}`
     );
   }
 
   // ==================================================
-  // AI CHATBOT SYSTEM
+  // SEND APPLICATION
+  // ==================================================
+
+  if (cmd === "sendapplication") {
+
+    if (
+      !message.member.permissions.has(
+        PermissionsBitField.Flags.Administrator
+      )
+    ) {
+
+      return message.reply(
+        "❌ Admin only."
+      );
+
+    }
+
+    const id = parseInt(args[0]);
+
+    const channel =
+      message.mentions.channels.first();
+
+    if (!id) {
+
+      return message.reply(
+        "❌ Give application ID."
+      );
+
+    }
+
+    if (!channel) {
+
+      return message.reply(
+        "❌ Mention a channel."
+      );
+
+    }
+
+    const data =
+      applications[message.guild.id];
+
+    if (!data || data.length === 0) {
+
+      return message.reply(
+        "❌ No applications found."
+      );
+
+    }
+
+    const app =
+      data.find(a => a.id === id);
+
+    if (!app) {
+
+      return message.reply(
+        "❌ Invalid application ID."
+      );
+
+    }
+
+    const embed = new EmbedBuilder()
+
+      .setColor("Blurple")
+
+      .setTitle(app.title)
+
+      .setDescription(app.description);
+
+    const row =
+      new ActionRowBuilder()
+
+        .addComponents(
+
+          new ButtonBuilder()
+
+            .setCustomId(`apply_${app.id}`)
+
+            .setLabel(app.buttonName)
+
+            .setStyle(ButtonStyle.Primary)
+
+        );
+
+    await channel.send({
+
+      embeds: [embed],
+
+      components: [row]
+
+    });
+
+    return message.reply(
+      `✅ Application sent in ${channel}`
+    );
+  }
+
+  // ==================================================
+  // APPLICATION LIST
+  // ==================================================
+
+  if (cmd === "listapplications") {
+
+    const data =
+      applications[message.guild.id];
+
+    if (!data || data.length === 0) {
+
+      return message.reply(
+        "❌ No applications found."
+      );
+
+    }
+
+    const embed = new EmbedBuilder()
+
+      .setColor("Blurple")
+
+      .setTitle("📋 List Of Applications")
+
+      .setDescription(
+
+        data.map(app =>
+
+`
+🆔 ID: ${app.id}
+📌 ${app.title}
+`
+
+        ).join("\n")
+
+      );
+
+    return message.channel.send({
+      embeds: [embed]
+    });
+  }
+
+  // ==================================================
+  // DELETE APPLICATION
+  // ==================================================
+
+  if (cmd === "deleteapplication") {
+
+    if (
+      !message.member.permissions.has(
+        PermissionsBitField.Flags.Administrator
+      )
+    ) {
+
+      return message.reply(
+        "❌ Admin only."
+      );
+
+    }
+
+    const id = parseInt(args[0]);
+
+    if (!id) {
+
+      return message.reply(
+        "❌ Give application ID."
+      );
+
+    }
+
+    const data =
+      applications[message.guild.id];
+
+    if (!data) {
+
+      return message.reply(
+        "❌ No applications."
+      );
+
+    }
+
+    const filtered =
+      data.filter(a => a.id !== id);
+
+    applications[message.guild.id] =
+      filtered;
+
+    save(appFile, applications);
+
+    return message.reply(
+      `✅ Deleted application ID ${id}`
+    );
+  }
+
+  // ==================================================
+  // AI CHATBOT
   // ==================================================
 
   const chatbot = load(chatbotFile);
 
-  const guildData = chatbot[message.guild.id];
+  const guildData =
+    chatbot[message.guild.id];
 
   if (!guildData) return;
   if (!guildData.enabled) return;
 
-  // ONLY IN CHATBOT CHANNEL
-  if (message.channel.id !== guildData.channel) return;
+  if (
+    message.channel.id !==
+    guildData.channel
+  ) return;
 
-  // IGNORE COMMANDS
-  if (message.content.startsWith(prefix)) return;
+  if (
+    message.content.startsWith(prefix)
+  ) return;
 
-  // COOLDOWN
-  if (aiCooldown.has(message.author.id)) return;
+  if (
+    aiCooldown.has(message.author.id)
+  ) return;
 
   aiCooldown.add(message.author.id);
 
   setTimeout(() => {
-    aiCooldown.delete(message.author.id);
-  }, 4000);
 
-  // ==================================================
-  // AI RESPONSE
-  // ==================================================
+    aiCooldown.delete(
+      message.author.id
+    );
+
+  }, 4000);
 
   try {
 
@@ -317,58 +481,68 @@ module.exports = async (message, client) => {
     const memory = load(memoryFile);
 
     if (!memory[message.author.id]) {
+
       memory[message.author.id] = [];
+
     }
 
-    const history = memory[message.author.id]
-      .map(m => ({
-        role: m.role,
-        parts: [
+    const history =
+      memory[message.author.id]
+
+        .map(m => ({
+
+          role: m.role,
+
+          parts: [
+            {
+              text: m.content
+            }
+          ]
+
+        }));
+
+    const result =
+      await model.generateContent({
+
+        contents: [
+
           {
-            text: m.content
+            role: "user",
+
+            parts: [
+              {
+                text:
+                  "You are a smart Discord AI assistant."
+              }
+            ]
+          },
+
+          ...history,
+
+          {
+            role: "user",
+
+            parts: [
+              {
+                text: message.content
+              }
+            ]
           }
+
         ]
-      }));
 
-    const result = await model.generateContent({
+      });
 
-      contents: [
+    const response =
+      await result.response;
 
-        {
-          role: "user",
-          parts: [
-            {
-              text:
-                "You are a smart Discord AI assistant. Keep replies short, friendly, and helpful."
-            }
-          ]
-        },
+    let text =
+      response.text();
 
-        ...history,
-
-        {
-          role: "user",
-          parts: [
-            {
-              text: message.content
-            }
-          ]
-        }
-
-      ]
-
-    });
-
-    const response = await result.response;
-
-    let text = response.text();
-
-    // LIMIT RESPONSE
     if (text.length > 1900) {
       text = text.slice(0, 1900);
     }
 
-    // SAVE MEMORY
     memory[message.author.id].push(
 
       {
@@ -383,9 +557,9 @@ module.exports = async (message, client) => {
 
     );
 
-    // LAST 10 MSGS
     memory[message.author.id] =
-      memory[message.author.id].slice(-10);
+      memory[message.author.id]
+        .slice(-10);
 
     save(memoryFile, memory);
 
