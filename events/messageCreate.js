@@ -117,202 +117,436 @@ module.exports = async (message, client) => {
       }
     }
 
-    // ==================================================
-    // APPLICATION SYSTEM (USES CACHE NOW)
-    // ==================================================
+  // ==================================================
+  // APPLICATION SYSTEM
+  // ==================================================
 
-    const applications = appCache;
+  const applications = load(appFile);
 
-    if (cmd === "createapplication") {
-      if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator))
-        return message.reply("❌ Admin only.");
+  // ==================================================
+  // CREATE APPLICATION
+  // ==================================================
 
-      const ask = async (q) => {
-        await message.channel.send({
-          embeds: [
-            new EmbedBuilder()
-              .setColor("Blurple")
-              .setTitle("📘 Application Creator")
-              .setDescription(q)
-          ]
-        });
+  if (cmd === "createapplication") {
 
-        const collected = await message.channel.awaitMessages({
-          filter: m => m.author.id === message.author.id,
-          max: 1,
-          time: 120000
-        });
-
-        return collected.first()?.content;
-      };
-
-      const title = await ask("Application title?");
-      if (!title) return;
-
-      const description = await ask("Application description?");
-      if (!description) return;
-
-      const buttonName = await ask("Button name?");
-      if (!buttonName) return;
-
-      const questions = [];
-      for (let i = 0; i < 5; i++) {
-        const q = await ask(`Question ${i + 1}?`);
-        if (!q) return;
-        questions.push(q);
-      }
-
-      if (!applications[message.guild.id]) applications[message.guild.id] = [];
-
-      const appId = applications[message.guild.id].length + 1;
-
-      applications[message.guild.id].push({
-        id: appId,
-        title,
-        description,
-        buttonName,
-        questions
-      });
-
-      return message.reply(`✅ Application created ID: ${appId}`);
-    }
-
-    if (cmd === "sendapplication") {
-      if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator))
-        return message.reply("❌ Admin only.");
-
-      const id = parseInt(args[0]);
-      const channel = message.mentions.channels.first();
-
-      if (!id || !channel)
-        return message.reply("❌ Usage: sendapplication <id> #channel");
-
-      const data = applications[message.guild.id];
-      if (!data) return message.reply("❌ No applications.");
-
-      const app = data.find(a => a.id === id);
-      if (!app) return message.reply("❌ Invalid ID.");
-
-      const embed = new EmbedBuilder()
-        .setColor("Blurple")
-        .setTitle(app.title)
-        .setDescription(app.description);
-
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(`apply_${app.id}`)
-          .setLabel(app.buttonName)
-          .setStyle(ButtonStyle.Primary)
-      );
-
-      await channel.send({ embeds: [embed], components: [row] });
-
-      return message.reply(`✅ Sent in ${channel}`);
-    }
-
-    if (cmd === "listapplications") {
-      const data = applications[message.guild.id];
-      if (!data?.length) return message.reply("❌ No applications.");
+    if (
+      !message.member.permissions.has(
+        PermissionsBitField.Flags.Administrator
+      )
+    ) {
 
       return message.reply(
-        data.map(a => `🆔 ${a.id} | ${a.title}`).join("\n")
+        "❌ Admin only."
       );
+
     }
 
-    if (cmd === "deleteapplication") {
-      if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator))
-        return message.reply("❌ Admin only.");
+    const ask = async (question) => {
 
-      const id = parseInt(args[0]);
-      if (!id) return message.reply("❌ Provide ID.");
+      const embed = new EmbedBuilder()
 
-      applications[message.guild.id] =
-        (applications[message.guild.id] || []).filter(a => a.id !== id);
+        .setColor("Blurple")
 
-      return message.reply(`🗑 Deleted application ${id}`);
-    }
-  }
+        .setTitle("📘 Application Creator")
 
-  // ==================================================
-  // AUTOMOD
-  // ==================================================
+        .setDescription(question);
 
-  try {
-    automod?.runAutomod?.(message);
-  } catch {}
+      await message.channel.send({
+        embeds: [embed]
+      });
 
-  // ==================================================
-  // AUTORESPONDER (CACHE FAST SYSTEM)
-  // ==================================================
+      const collected =
+        await message.channel.awaitMessages({
 
-  const guildAR = autoresponderCache[message.guild.id];
+          filter:
+            m => m.author.id === message.author.id,
 
-  if (guildAR) {
-    const msg = message.content.toLowerCase();
+          max: 1,
 
-    for (const trigger in guildAR) {
-      if (msg.includes(trigger.toLowerCase())) {
-        return message.channel.send(guildAR[trigger]);
-      }
-    }
-  }
+          time: 120000
 
-  // ==================================================
-  // CHATBOT AI
-  // ==================================================
+        });
 
-  const chatbot = chatbotCache[message.guild.id];
+      if (!collected.first()) return null;
 
-  if (!chatbot?.enabled) return;
-  if (message.channel.id !== chatbot.channel) return;
-  if (message.content.startsWith(prefix)) return;
+      return collected.first().content;
+    };
 
-  if (aiCooldown.has(message.author.id)) return;
+    const title =
+      await ask("Application title?");
 
-  aiCooldown.add(message.author.id);
-  setTimeout(() => aiCooldown.delete(message.author.id), 4000);
+    if (!title) return;
 
-  try {
-    await message.channel.sendTyping();
+    const description =
+      await ask("Application description?");
 
-    if (!memoryCache[message.author.id]) {
-      memoryCache[message.author.id] = [];
+    if (!description) return;
+
+    const buttonName =
+      await ask("Button name?");
+
+    if (!buttonName) return;
+
+    const questions = [];
+
+    for (let i = 0; i < 5; i++) {
+
+      const q =
+        await ask(`Question ${i + 1}?`);
+
+      if (!q) return;
+
+      questions.push(q);
     }
 
-    const history = memoryCache[message.author.id].map(m => ({
-      role: m.role,
-      parts: [{ text: m.content }]
-    }));
+    if (!applications[message.guild.id]) {
+      applications[message.guild.id] = [];
+    }
 
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: "You are a smart Discord AI assistant." }]
-        },
-        ...history,
-        {
-          role: "user",
-          parts: [{ text: message.content }]
-        }
-      ]
+    const appId =
+      applications[message.guild.id].length + 1;
+
+    applications[message.guild.id].push({
+
+      id: appId,
+
+      title,
+      description,
+      buttonName,
+      questions
+
     });
 
-    let text = result.response.text();
-    if (text.length > 1900) text = text.slice(0, 1900);
+    save(appFile, applications);
 
-    memoryCache[message.author.id].push(
-      { role: "user", content: message.content },
-      { role: "model", content: text }
+    return message.reply(
+      `✅ Application created with ID: ${appId}`
+    );
+  }
+
+  // ==================================================
+  // SEND APPLICATION
+  // ==================================================
+
+  if (cmd === "sendapplication") {
+
+    if (
+      !message.member.permissions.has(
+        PermissionsBitField.Flags.Administrator
+      )
+    ) {
+
+      return message.reply(
+        "❌ Admin only."
+      );
+
+    }
+
+    const id = parseInt(args[0]);
+
+    const channel =
+      message.mentions.channels.first();
+
+    if (!id) {
+
+      return message.reply(
+        "❌ Give application ID."
+      );
+
+    }
+
+    if (!channel) {
+
+      return message.reply(
+        "❌ Mention a channel."
+      );
+
+    }
+
+    const data =
+      applications[message.guild.id];
+
+    if (!data || data.length === 0) {
+
+      return message.reply(
+        "❌ No applications found."
+      );
+
+    }
+
+    const app =
+      data.find(a => a.id === id);
+
+    if (!app) {
+
+      return message.reply(
+        "❌ Invalid application ID."
+      );
+
+    }
+
+    const embed = new EmbedBuilder()
+
+      .setColor("Blurple")
+
+      .setTitle(app.title)
+
+      .setDescription(app.description);
+
+    const row =
+      new ActionRowBuilder()
+
+        .addComponents(
+
+          new ButtonBuilder()
+
+            .setCustomId(`apply_${app.id}`)
+
+            .setLabel(app.buttonName)
+
+            .setStyle(ButtonStyle.Primary)
+
+        );
+
+    await channel.send({
+
+      embeds: [embed],
+
+      components: [row]
+
+    });
+
+    return message.reply(
+      `✅ Application sent in ${channel}`
+    );
+  }
+
+  // ==================================================
+  // APPLICATION LIST
+  // ==================================================
+
+  if (cmd === "applications") {
+
+    const data =
+      applications[message.guild.id];
+
+    if (!data || data.length === 0) {
+
+      return message.reply(
+        "❌ No applications found."
+      );
+
+    }
+
+    const embed = new EmbedBuilder()
+
+      .setColor("Blurple")
+
+      .setTitle("📋 Applications")
+
+      .setDescription(
+
+        data.map(app =>
+
+`
+🆔 ID: ${app.id}
+📌 ${app.title}
+`
+
+        ).join("\n")
+
+      );
+
+    return message.channel.send({
+      embeds: [embed]
+    });
+  }
+
+  // ==================================================
+  // DELETE APPLICATION
+  // ==================================================
+
+  if (cmd === "deleteapplication") {
+
+    if (
+      !message.member.permissions.has(
+        PermissionsBitField.Flags.Administrator
+      )
+    ) {
+
+      return message.reply(
+        "❌ Admin only."
+      );
+
+    }
+
+    const id = parseInt(args[0]);
+
+    if (!id) {
+
+      return message.reply(
+        "❌ Give application ID."
+      );
+
+    }
+
+    const data =
+      applications[message.guild.id];
+
+    if (!data) {
+
+      return message.reply(
+        "❌ No applications."
+      );
+
+    }
+
+    const filtered =
+      data.filter(a => a.id !== id);
+
+    applications[message.guild.id] =
+      filtered;
+
+    save(appFile, applications);
+
+    return message.reply(
+      `✅ Deleted application ID ${id}`
+    );
+  }
+
+  // ==================================================
+  // AI CHATBOT
+  // ==================================================
+
+  const chatbot = load(chatbotFile);
+
+  const guildData =
+    chatbot[message.guild.id];
+
+  if (!guildData) return;
+  if (!guildData.enabled) return;
+
+  if (
+    message.channel.id !==
+    guildData.channel
+  ) return;
+
+  if (
+    message.content.startsWith(prefix)
+  ) return;
+
+  if (
+    aiCooldown.has(message.author.id)
+  ) return;
+
+  aiCooldown.add(message.author.id);
+
+  setTimeout(() => {
+
+    aiCooldown.delete(
+      message.author.id
     );
 
-    memoryCache[message.author.id] =
-      memoryCache[message.author.id].slice(-10);
+  }, 4000);
+
+  try {
+
+    await message.channel.sendTyping();
+
+    const memory = load(memoryFile);
+
+    if (!memory[message.author.id]) {
+
+      memory[message.author.id] = [];
+
+    }
+
+    const history =
+      memory[message.author.id]
+
+        .map(m => ({
+
+          role: m.role,
+
+          parts: [
+            {
+              text: m.content
+            }
+          ]
+
+        }));
+
+    const result =
+      await model.generateContent({
+
+        contents: [
+
+          {
+            role: "user",
+
+            parts: [
+              {
+                text:
+                  "You are a smart Discord AI assistant."
+              }
+            ]
+          },
+
+          ...history,
+
+          {
+            role: "user",
+
+            parts: [
+              {
+                text: message.content
+              }
+            ]
+          }
+
+        ]
+
+      });
+
+    const response =
+      await result.response;
+
+    let text =
+      response.text();
+
+    if (text.length > 1900) {
+      text = text.slice(0, 1900);
+    }
+
+    memory[message.author.id].push(
+
+      {
+        role: "user",
+        content: message.content
+      },
+
+      {
+        role: "model",
+        content: text
+      }
+
+    );
+
+    memory[message.author.id] =
+      memory[message.author.id]
+        .slice(-10);
+
+    save(memoryFile, memory);
 
     return message.reply(text);
 
   } catch (err) {
+
     console.log("AI Error:", err);
-    return message.reply("❌ AI failed to respond.");
+
+    return message.reply(
+      "❌ AI failed to respond."
+    );
+
   }
 };
