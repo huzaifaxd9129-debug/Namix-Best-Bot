@@ -118,6 +118,22 @@ module.exports = async (interaction, client) => {
       setup.staffApplyButton(interaction);
     }
 
+    // ================= STAFF ACCEPT =================
+
+    if (interaction.customId.startsWith("staff_accept_")) {
+      if (setup.staffAcceptButton) {
+        return setup.staffAcceptButton(interaction);
+      }
+    }
+
+    // ================= STAFF REJECT =================
+
+    if (interaction.customId.startsWith("staff_reject_")) {
+      if (setup.staffRejectButton) {
+        return setup.staffRejectButton(interaction);
+      }
+    }
+
     // ==================================================
     // CLOSE TICKET BUTTON
     // ==================================================

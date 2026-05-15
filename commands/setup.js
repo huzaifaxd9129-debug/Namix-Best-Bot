@@ -470,12 +470,99 @@ module.exports.staffApplyModal = async (interaction, client) => {
     )
     .setTimestamp();
 
-  await channel.send({ embeds: [embed] });
+  const applyRow = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`staff_accept_${interaction.user.id}`)
+        .setLabel("Accept")
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId(`staff_reject_${interaction.user.id}`)
+        .setLabel("Reject")
+        .setStyle(ButtonStyle.Danger)
+    );
+
+  await channel.send({ embeds: [embed], components: [applyRow] });
+
+  const logsChannel = interaction.client.channels.cache.get("1500169350307647488");
+  if (logsChannel) {
+    logsChannel.send(`📝 New application from ${interaction.user} (${interaction.user.tag})`);
+  }
 
   return interaction.reply({
-    content: "✅ Your application has been submitted! Staff will review it shortly.",
+    content: "✅ Your application has been submitted!",
     ephemeral: true
   });
+};
+
+// =========================================================
+// STAFF ACCEPT BUTTON
+// =========================================================
+
+module.exports.staffAcceptButton = async (interaction) => {
+
+  if (!interaction.customId.startsWith("staff_accept_")) return;
+
+  const userId = interaction.customId.replace("staff_accept_", "");
+
+  const acceptEmbed = new EmbedBuilder()
+    .setTitle("✅ Application Accepted")
+    .setDescription(`Congratulations! Your staff application in **${interaction.guild.name}** has been **accepted**. Welcome to the team!`)
+    .setColor("Green")
+    .setTimestamp();
+
+  const applicant = await interaction.client.users.fetch(userId).catch(() => null);
+
+  if (applicant) {
+    applicant.send({ embeds: [acceptEmbed] }).catch(() => {});
+  }
+
+  await interaction.message.edit({ components: [] });
+
+  await interaction.reply({
+    content: `✅ Application from <@${userId}> has been **accepted**.`,
+    ephemeral: true
+  });
+
+  const logsChannel = interaction.client.channels.cache.get("1500169350307647488");
+  if (logsChannel) {
+    logsChannel.send(`✅ Application ACCEPTED from <@${userId}>${applicant ? ` (${applicant.tag})` : ""} — reviewed by ${interaction.user} (${interaction.user.tag})`);
+  }
+};
+
+// =========================================================
+// STAFF REJECT BUTTON
+// =========================================================
+
+module.exports.staffRejectButton = async (interaction) => {
+
+  if (!interaction.customId.startsWith("staff_reject_")) return;
+
+  const userId = interaction.customId.replace("staff_reject_", "");
+
+  const rejectEmbed = new EmbedBuilder()
+    .setTitle("❌ Application Rejected")
+    .setDescription(`Unfortunately, your staff application in **${interaction.guild.name}** has been **rejected**. You may apply again in the future.`)
+    .setColor("Red")
+    .setTimestamp();
+
+  const applicant = await interaction.client.users.fetch(userId).catch(() => null);
+
+  if (applicant) {
+    applicant.send({ embeds: [rejectEmbed] }).catch(() => {});
+  }
+
+  await interaction.message.edit({ components: [] });
+
+  await interaction.reply({
+    content: `❌ Application from <@${userId}> has been **rejected**.`,
+    ephemeral: true
+  });
+
+  const logsChannel = interaction.client.channels.cache.get("1500169350307647488");
+  if (logsChannel) {
+    logsChannel.send(`❌ Application REJECTED from <@${userId}>${applicant ? ` (${applicant.tag})` : ""} — reviewed by ${interaction.user} (${interaction.user.tag})`);
+  }
 };
 
 // =========================================================
