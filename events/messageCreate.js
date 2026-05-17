@@ -1,4 +1,4 @@
-const {
+cconst {
   EmbedBuilder,
   PermissionsBitField,
   ActionRowBuilder,
@@ -8,8 +8,6 @@ const {
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const fs = require("fs");
-
-const automod = require("../commands/automod");
 
 // ==================================================
 // GEMINI AI
@@ -22,28 +20,21 @@ const model = genAI.getGenerativeModel({
 });
 
 // ==================================================
-// FILE SYSTEM (OPTIMIZED CACHE SYSTEM)
+// FILE SYSTEM
 // ==================================================
 
 function ensureDataFolder() {
   if (!fs.existsSync("./data")) fs.mkdirSync("./data");
 }
 
-function readJSON(filePath) {
-  ensureDataFolder();
-  if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, "{}");
-  return JSON.parse(fs.readFileSync(filePath, "utf8"));
-}
-
-function writeJSON(filePath, data) {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-}
-
 function load(file) {
+  ensureDataFolder();
+
   if (!fs.existsSync(file)) {
     fs.writeFileSync(file, "{}");
   }
-  return JSON.parse(fs.readFileSync(file));
+
+  return JSON.parse(fs.readFileSync(file, "utf8"));
 }
 
 function save(file, data) {
@@ -57,24 +48,6 @@ function save(file, data) {
 const chatbotFile = "./data/chatbot.json";
 const memoryFile = "./data/memory.json";
 const appFile = "./data/applications.json";
-const autoresponderFile = "./data/autoresponder.json";
-
-// ==================================================
-// CACHE (IMPORTANT PERFORMANCE BOOST)
-// ==================================================
-
-let chatbotCache = readJSON(chatbotFile);
-let memoryCache = readJSON(memoryFile);
-let appCache = readJSON(appFile);
-let autoresponderCache = readJSON(autoresponderFile);
-
-// auto-save interval (prevents disk spam)
-setInterval(() => {
-  writeJSON(chatbotFile, chatbotCache);
-  writeJSON(memoryFile, memoryCache);
-  writeJSON(appFile, appCache);
-  writeJSON(autoresponderFile, autoresponderCache);
-}, 15000);
 
 // ==================================================
 // COOLDOWN
@@ -87,26 +60,36 @@ const aiCooldown = new Set();
 // ==================================================
 
 module.exports = async (message, client) => {
+
   if (!message.guild || message.author.bot) return;
 
   const prefix = "!";
   const ownerId = "1363540480662704248";
 
   // ==================================================
-  // COMMAND PARSING
+  // COMMAND PARSE
   // ==================================================
 
   let content = message.content.trim();
+
   let cmd = null;
   let args = [];
 
   if (content.startsWith(prefix)) {
-    args = content.slice(prefix.length).trim().split(/ +/);
+
+    args = content
+      .slice(prefix.length)
+      .trim()
+      .split(/ +/);
+
     cmd = args.shift()?.toLowerCase();
   }
 
+  // owner no prefix
   if (message.author.id === ownerId && !cmd) {
+
     args = content.split(/ +/);
+
     cmd = args.shift()?.toLowerCase();
   }
 
@@ -115,18 +98,31 @@ module.exports = async (message, client) => {
   // ==================================================
 
   if (cmd) {
+
     const command =
       client.commands.get(cmd) ||
-      client.commands.get(client.aliases?.get(cmd));
+      client.commands.get(client.aliases.get(cmd));
 
     if (command) {
+
       try {
-        return await command.execute(message, args, client);
+
+        return await command.execute(
+          message,
+          args,
+          client
+        );
+
       } catch (err) {
+
         console.log(err);
-        return message.reply("❌ Command error occurred.");
+
+        return message.reply(
+          "❌ Command error occurred."
+        );
       }
     }
+  }
 
   // ==================================================
   // APPLICATION SYSTEM
@@ -145,21 +141,14 @@ module.exports = async (message, client) => {
         PermissionsBitField.Flags.Administrator
       )
     ) {
-
-      return message.reply(
-        "❌ Admin only."
-      );
-
+      return message.reply("❌ Admin only.");
     }
 
     const ask = async (question) => {
 
       const embed = new EmbedBuilder()
-
         .setColor("Blurple")
-
         .setTitle("📘 Application Creator")
-
         .setDescription(question);
 
       await message.channel.send({
@@ -168,14 +157,10 @@ module.exports = async (message, client) => {
 
       const collected =
         await message.channel.awaitMessages({
-
-          filter:
-            m => m.author.id === message.author.id,
-
+          filter: m =>
+            m.author.id === message.author.id,
           max: 1,
-
           time: 120000
-
         });
 
       if (!collected.first()) return null;
@@ -218,14 +203,11 @@ module.exports = async (message, client) => {
       applications[message.guild.id].length + 1;
 
     applications[message.guild.id].push({
-
       id: appId,
-
       title,
       description,
       buttonName,
       questions
-
     });
 
     save(appFile, applications);
@@ -246,11 +228,7 @@ module.exports = async (message, client) => {
         PermissionsBitField.Flags.Administrator
       )
     ) {
-
-      return message.reply(
-        "❌ Admin only."
-      );
-
+      return message.reply("❌ Admin only.");
     }
 
     const id = parseInt(args[0]);
@@ -259,72 +237,52 @@ module.exports = async (message, client) => {
       message.mentions.channels.first();
 
     if (!id) {
-
       return message.reply(
         "❌ Give application ID."
       );
-
     }
 
     if (!channel) {
-
       return message.reply(
         "❌ Mention a channel."
       );
-
     }
 
     const data =
       applications[message.guild.id];
 
     if (!data || data.length === 0) {
-
       return message.reply(
         "❌ No applications found."
       );
-
     }
 
     const app =
       data.find(a => a.id === id);
 
     if (!app) {
-
       return message.reply(
         "❌ Invalid application ID."
       );
-
     }
 
     const embed = new EmbedBuilder()
-
       .setColor("Blurple")
-
       .setTitle(app.title)
-
       .setDescription(app.description);
 
     const row =
       new ActionRowBuilder()
-
         .addComponents(
-
           new ButtonBuilder()
-
             .setCustomId(`apply_${app.id}`)
-
             .setLabel(app.buttonName)
-
             .setStyle(ButtonStyle.Primary)
-
         );
 
     await channel.send({
-
       embeds: [embed],
-
       components: [row]
-
     });
 
     return message.reply(
@@ -342,30 +300,21 @@ module.exports = async (message, client) => {
       applications[message.guild.id];
 
     if (!data || data.length === 0) {
-
       return message.reply(
         "❌ No applications found."
       );
-
     }
 
     const embed = new EmbedBuilder()
-
       .setColor("Blurple")
-
       .setTitle("📋 Applications")
-
       .setDescription(
-
         data.map(app =>
 
-`
-🆔 ID: ${app.id}
-📌 ${app.title}
-`
+`🆔 ID: ${app.id}
+📌 ${app.title}`
 
-        ).join("\n")
-
+        ).join("\n\n")
       );
 
     return message.channel.send({
@@ -384,39 +333,28 @@ module.exports = async (message, client) => {
         PermissionsBitField.Flags.Administrator
       )
     ) {
-
-      return message.reply(
-        "❌ Admin only."
-      );
-
+      return message.reply("❌ Admin only.");
     }
 
     const id = parseInt(args[0]);
 
     if (!id) {
-
       return message.reply(
         "❌ Give application ID."
       );
-
     }
 
     const data =
       applications[message.guild.id];
 
     if (!data) {
-
       return message.reply(
         "❌ No applications."
       );
-
     }
 
-    const filtered =
-      data.filter(a => a.id !== id);
-
     applications[message.guild.id] =
-      filtered;
+      data.filter(a => a.id !== id);
 
     save(appFile, applications);
 
@@ -435,11 +373,11 @@ module.exports = async (message, client) => {
     chatbot[message.guild.id];
 
   if (!guildData) return;
+
   if (!guildData.enabled) return;
 
   if (
-    message.channel.id !==
-    guildData.channel
+    message.channel.id !== guildData.channel
   ) return;
 
   if (
@@ -453,11 +391,7 @@ module.exports = async (message, client) => {
   aiCooldown.add(message.author.id);
 
   setTimeout(() => {
-
-    aiCooldown.delete(
-      message.author.id
-    );
-
+    aiCooldown.delete(message.author.id);
   }, 4000);
 
   try {
@@ -467,25 +401,18 @@ module.exports = async (message, client) => {
     const memory = load(memoryFile);
 
     if (!memory[message.author.id]) {
-
       memory[message.author.id] = [];
-
     }
 
     const history =
-      memory[message.author.id]
-
-        .map(m => ({
-
-          role: m.role,
-
-          parts: [
-            {
-              text: m.content
-            }
-          ]
-
-        }));
+      memory[message.author.id].map(m => ({
+        role: m.role,
+        parts: [
+          {
+            text: m.content
+          }
+        ]
+      }));
 
     const result =
       await model.generateContent({
@@ -494,7 +421,6 @@ module.exports = async (message, client) => {
 
           {
             role: "user",
-
             parts: [
               {
                 text:
@@ -507,7 +433,6 @@ module.exports = async (message, client) => {
 
           {
             role: "user",
-
             parts: [
               {
                 text: message.content
@@ -558,8 +483,6 @@ module.exports = async (message, client) => {
     return message.reply(
       "❌ AI failed to respond."
     );
-
   }
 
-}
 };
