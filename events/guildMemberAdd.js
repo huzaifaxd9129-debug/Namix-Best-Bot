@@ -1,56 +1,28 @@
 const fs = require("fs");
+const { EmbedBuilder } = require("discord.js");
 
-const file = "./data/welcome.json";
+module.exports = async (member) => {
 
-// ==================================================
-// SAFE JSON LOADER
-// ==================================================
+  const file = "./data/welcome.json";
 
-function load() {
-  if (!fs.existsSync(file)) {
-    fs.writeFileSync(file, "{}");
-  }
-  return JSON.parse(fs.readFileSync(file, "utf8"));
-}
+  if (!fs.existsSync(file)) return;
 
-// ==================================================
-// EVENT
-// ==================================================
+  const data = JSON.parse(fs.readFileSync(file, "utf8"));
 
-module.exports = async (member, client) => {
-  try {
-    if (!member || !member.guild) return;
+  const setup = data[member.guild.id];
 
-    const data = load();
-    const config = data[member.guild.id];
+  if (!setup || !setup.enabled) return;
 
-    // ❌ no config found
-    if (!config || !config.enabled) return;
+  const channel = member.guild.channels.cache.get(setup.channelId);
 
-    const channel = member.guild.channels.cache.get(config.channelId);
-    if (!channel) return;
+  if (!channel) return;
 
-    // ==================================================
-    // MESSAGE VARIABLES SYSTEM
-    // ==================================================
+  const msg = setup.message
+    .replace("{user}", `<@${member.id}>`)
+    .replace("{server}", member.guild.name);
 
-    let msg = config.message;
+  channel.send({
+    content: msg
+  });
 
-    msg = msg
-      .replace(/{user}/g, `<@${member.id}>`)
-      .replace(/{username}/g, member.user.username)
-      .replace(/{server}/g, member.guild.name)
-      .replace(/{members}/g, member.guild.memberCount);
-
-    // ==================================================
-    // SEND WELCOME MESSAGE
-    // ==================================================
-
-    channel.send({
-      content: msg
-    });
-
-  } catch (err) {
-    console.log("❌ Welcome Event Error:", err);
-  }
 };
